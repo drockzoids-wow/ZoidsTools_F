@@ -9,6 +9,12 @@ Targets the installed **1.60.1.69893** client with interface **160001** (derived
 
 ## Included
 
+- Vendor automation under `/ztf vendor`: native bulk junk selling without opening its confirmation, and personal-gold or guild-bank-only repairs. Both start disabled. Hold Shift when opening a vendor to skip that visit. Uses Blizzard's junk selection rules; bulk-sold junk cannot be bought back. Unsupported bulk APIs/buttons skip auto selling instead of selling slot by slot. Guild mode does not fall back to personal gold.
+
+- Custom castbar width/height for player, target, and focus under `/ztf castbars`. Click **Preview this castbar** to keep the actual native bar visible during adjustments. Target/focus frames must be visible. Size overrides start disabled; turning them off restores captured native dimensions.
+
+- Optional class-colored health bars on the default player, target, target-of-target, and focus frames. Open `/ztf unitframes` and enable **Class-colored health bars**. NPCs and vehicles keep native colors; protected frame updates wait until combat ends. This option starts disabled, matching retail ZoidsTools.
+
 - Original ZoidsTools meter rendering, two windows, type selection, current/overall/recent segments, player details, scrolling, snapping, and resizing.
 - Original gold/dark theme, controls, artwork, and minimap launcher.
 - A compact meter settings window, text size, opacity, class-colored borders, and one account-wide saved layout.
@@ -37,6 +43,10 @@ Preview mode displays sample values until you click **Lock meters**.
 The retail ZoidsTools addon is not required; its files and saved settings are not modified.
 
 ## Validation status
+
+Castbar preview is experimental on Forever. It uses `isInEditMode` plus `UpdateShownState`, the visibility mechanism used in Blizzard's [castbar Edit Mode code](https://github.com/Gethe/wow-ui-source/blob/live/Interface/AddOns/Blizzard_EditMode/Shared/EditModeManager.lua). It does not enter full Edit Mode or borrow its selection/settings dialogs. Position remains managed by Blizzard. The source reference is the live UI mirror; exact Forever beta behavior requires in-game validation. Missing preview methods produce a message instead of displaying a separate simulated castbar.
+
+Preview ends on leaving the Castbars page, changing the selected bar or target/focus, starting a cast/channel, or entering combat. Visibility cleanup blocked by combat is completed afterward. Full Edit Mode takes ownership of its own previews; addon size changes are paused while it is open. Test normal casts/channels after closing a preview and after combat, and check size persistence after `/reload`.
 
 Lua 5.1 syntax and mocked startup/capability tests are provided in `Tests/smoke.py` (Python with `lupa`).
 Movement tests also cover window/bag dragging, saved-position restoration, scale limits, enable/disable controls, protected-frame exclusions, combat guards, and late-loaded windows.

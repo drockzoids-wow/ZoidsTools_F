@@ -80,3 +80,27 @@ print('PASS: saved settings isolation, defaults, missing/partial APIs, availabil
 compile_lua((root / 'Modules/MovableWindows.lua').read_text(encoding='utf-8-sig'), 'MovableWindows.lua')('ZoidsTools_F', ns)
 lua.execute((root / 'Tests/movement.lua').read_text(encoding='utf-8'))
 print('PASS: window/bag drag, persistence, scale limits, toggles, protected exclusions, combat guards, late-loaded windows')
+health_lua = LuaRuntime(unpack_returned_tuples=True)
+health_lua.execute((root / 'Tests/unitframes.lua').read_text(encoding='utf-8'))
+health_ns = health_lua.eval('{ db = { unitFrames = { classColorHealth = false } } }')
+for file in ['Compatibility.lua', 'Modules/UnitFrames.lua']:
+    health_lua.execute((root / file).read_text(encoding='utf-8'), 'ZoidsTools_F', health_ns)
+health_lua.globals().RunUnitFrameTests(health_ns)
+print('PASS: class health colors, NPC/vehicle transitions, restoration, secret-value guards, and combat deferral')
+cast_lua = LuaRuntime(unpack_returned_tuples=True)
+cast_lua.execute((root / 'Tests/castbars.lua').read_text(encoding='utf-8'))
+cast_ns = cast_lua.eval('''{ db = { castbars = {
+    player = { enabled = false, width = 195, height = 16 },
+    target = { enabled = false, width = 195, height = 16 },
+    focus = { enabled = false, width = 195, height = 16 }
+} } }''')
+for file in ['Compatibility.lua', 'Modules/Castbars.lua']:
+    cast_lua.execute((root / file).read_text(encoding='utf-8'), 'ZoidsTools_F', cast_ns)
+cast_lua.globals().RunCastbarTests(cast_ns)
+print('PASS: castbar sizing, native preview lifecycle, cast/channel handoff, combat, API failures, and Edit Mode ownership')
+vendor_lua = LuaRuntime(unpack_returned_tuples=True)
+vendor_lua.execute((root / 'Tests/vendor.lua').read_text(encoding='utf-8'))
+vendor_ns = vendor_lua.eval('{ db = { vendor = { autoSellJunk = false, autoRepairMode = "disabled" } }, Print = function() end }')
+vendor_lua.execute((root / 'Modules/VendorAutomation.lua').read_text(encoding='utf-8'), 'ZoidsTools_F', vendor_ns)
+vendor_lua.globals().RunVendorTests(vendor_ns)
+print('PASS: popup-free bulk junk sale, repair funding, delayed proceeds, Shift skip, missing API/button, and stale visit cancellation')

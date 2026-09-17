@@ -13,9 +13,15 @@ Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
 Core.lua
 Compatibility.lua
 Modules\MovableWindows.lua
+Modules\UnitFrames.lua
+Modules\Castbars.lua
+Modules\VendorAutomation.lua
 Modules\CustomDamageMeter.lua
 UI\Theme.lua
 UI\Controls.lua
 UI\Windows.lua
+UI\UnitFrames.lua
+UI\Castbars.lua
+UI\Vendor.lua
 UI\Window.lua
 UI\Minimap.lua

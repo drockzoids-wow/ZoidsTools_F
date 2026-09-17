@@ -4,6 +4,13 @@ ns.title = "ZoidsTools Forever"
 ns.version = "0.2.0-beta"
 
 local defaults = {
+    vendor = { autoSellJunk = false, autoRepairMode = "disabled" },
+    unitFrames = { classColorHealth = false },
+    castbars = {
+        player = { enabled = false, width = 195, height = 16 },
+        target = { enabled = false, width = 195, height = 16 },
+        focus = { enabled = false, width = 195, height = 16 },
+    },
     windows = {
         enabled = true, moveBags = true, savePositions = true,
         scaleEnabled = true, scaleStep = 0.05, minScale = 0.6, maxScale = 1.8,
@@ -54,6 +61,9 @@ events:SetScript("OnEvent", function(_, event, name)
         ns.db = ZoidsTools_FDB
     elseif event == "PLAYER_LOGIN" then
         ns:InitializeMovableWindows()
+        ns:InitializeUnitFrames()
+        ns:InitializeCastbars()
+        ns:InitializeVendorAutomation()
         ns:InitializeCustomDamageMeter()
         ns:InitializeMinimapButton()
     end
@@ -71,6 +81,12 @@ SlashCmdList.ZOIDSTOOLS_FOREVER = function(message)
         ns:RefreshMovableWindows()
         if ns.UI.RefreshVisiblePage then ns.UI.RefreshVisiblePage() end
         ns:Print((feature == "windows" and "Window movement " or "Bag movement ") .. state .. ".")
+    elseif command == "vendor" then
+        ns:OpenConfig("vendor")
+    elseif command == "castbars" then
+        ns:OpenConfig("castbars")
+    elseif command == "unitframes" or command == "frames" then
+        ns:OpenConfig("unitframes")
     elseif command == "windows" or command == "bags" then
         ns:OpenConfig("windows")
     elseif command == "status" then
