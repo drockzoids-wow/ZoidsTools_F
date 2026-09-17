@@ -1,0 +1,39 @@
+name: Draft addon release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install test dependencies
+        run: python -m pip install -r Tests/requirements.txt
+      - name: Test before release
+        run: |
+          python Tests/smoke.py
+          python Tests/package_test.py
+      - name: Package matching version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python Tools/package.py --tag "$RELEASE_TAG"
+      - name: Create draft release with addon ZIP
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          options=(--draft --verify-tag --title "$RELEASE_TAG" --generate-notes)
+          if [[ "$RELEASE_TAG" == *-* ]]; then
+            options+=(--prerelease)
+          fi
+          gh release create "$RELEASE_TAG" dist/*.zip "${options[@]}"

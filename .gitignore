@@ -1,0 +1,28 @@
+# Generated packages and local test environments
+dist/
+build/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.bak
+
+# Local credentials and game data
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+WTF/
+Logs/
+Screenshots/
+SavedVariables/

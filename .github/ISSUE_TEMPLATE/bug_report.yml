@@ -1,0 +1,29 @@
+name: Bug report
+description: Report a Forever addon error or unexpected behavior.
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Addon version
+      placeholder: 0.2.0-beta
+    validations:
+      required: true
+  - type: textarea
+    id: client
+    attributes:
+      label: Client details
+      description: Paste the output of /ztf status.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps and expected behavior
+      description: What did you do, what happened, and what did you expect? Mention combat state and other UI/bag addons.
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Lua error or screenshot
+      description: Paste the full Lua error if available, or attach a screenshot.
