@@ -3,6 +3,7 @@
 ## Notes: Standalone Forever beta addon with damage meters and movable windows/bags.
 ## Author: Drockzoids
 ## Version: 0.2.0-beta
+## X-Curse-Project-ID: 1700355
 ## SavedVariables: ZoidsTools_FDB
 ## IconTexture: Interface\AddOns\ZoidsTools_F\Media\ZoidToolsIcon.png
 
