@@ -2,9 +2,10 @@
 ## Title: ZoidsTools Forever
 ## Notes: Standalone Forever beta addon with damage meters and movable windows/bags.
 ## Author: Drockzoids
-## Version: 0.2.0-beta
+## Version: 0.2.1-beta
 ## X-Curse-Project-ID: 1700355
 ## SavedVariables: ZoidsTools_FDB
+## OptionalDeps: ZoidsTools_F_Recovery
 ## IconTexture: Interface\AddOns\ZoidsTools_F\Media\ZoidToolsIcon.png
 
 Libs\LibStub\LibStub.lua
@@ -15,14 +16,26 @@ Core.lua
 Compatibility.lua
 Modules\MovableWindows.lua
 Modules\UnitFrames.lua
+Modules\PlayerTooltip.lua
+Modules\ActionButtonRange.lua
+Modules\CampfireBar.lua
+Modules\StatsWindow.lua
 Modules\Castbars.lua
 Modules\VendorAutomation.lua
+Modules\FastLoot.lua
+Modules\QuestAutomation.lua
+Modules\TrackerMinimize.lua
 Modules\CustomDamageMeter.lua
 UI\Theme.lua
 UI\Controls.lua
 UI\Windows.lua
 UI\UnitFrames.lua
+UI\Tooltips.lua
+UI\ActionBars.lua
+UI\Stats.lua
 UI\Castbars.lua
 UI\Vendor.lua
+UI\Loot.lua
+UI\Quests.lua
 UI\Window.lua
 UI\Minimap.lua

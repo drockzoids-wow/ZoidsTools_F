@@ -15,12 +15,12 @@ python Tools/package.py
 
 Tests use Lua 5.1 via Lupa. They are mocked checks; validate UI and combat behavior in the actual client before describing a change as compatible.
 
-The package builder includes the TOC, its Lua load list, artwork, license, README, and changelog under one `ZoidsTools_F` directory. Add new runtime Lua files to the TOC. Extend the builder for new runtime resource types. Generated ZIP files stay in the ignored `dist` folder.
+The package builder includes the TOC, its Lua load list, artwork, license, README, and changelog under `ZoidsTools_F`, plus the companion TOC and Lua load list from `Recovery` under a sibling `ZoidsTools_F_Recovery` directory. Keep the companion TOC version aligned with the main addon. Personal recovery presets from `build` are never packaged. Add new runtime Lua files to the appropriate TOC. Extend the builder for new runtime resource types. Generated ZIP files stay in the ignored `dist` folder.
 
 For changes, include a clear description and test results. For bugs, include the addon version, `/ztf status` output, reproduction steps, and any Lua error.
 
 ## Releases
 
-Update the matching versions in `Core.lua` and `ZoidsTools_F.toc`, and update `CHANGELOG.md`. Commit and push changes, then push a matching `v` tag (for example, `v0.2.0-beta`). The release workflow runs tests, builds the addon ZIP, and creates a draft release. Tags containing a hyphen are marked prerelease. Review the draft on GitHub and publish when ready.
+Update the matching versions in `Core.lua` and `ZoidsTools_F.toc`, and update `CHANGELOG.md`. Commit changes, then push main and a new matching `v` tag (for example, `git push origin main v0.2.1-beta`). The release workflow runs tests, uploads the addon ZIP to Forever CurseForge project 1700355 using the repository's `CF_API_KEY` secret, and publishes the GitHub release automatically. Tags containing a hyphen are marked prerelease. See `GITHUB_SETUP.md` for setup and retry guidance.
 
 The workflow uses GitHub's automatic token; no personal token or CurseForge secret is needed. CurseForge distribution is not configured for this new addon.

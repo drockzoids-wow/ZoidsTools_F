@@ -1,9 +1,15 @@
 local addonName, ns = ...
 ns.addonName = addonName
 ns.title = "ZoidsTools Forever"
-ns.version = "0.2.0-beta"
+ns.version = "0.2.1-beta"
 
 local defaults = {
+    campfire = { enabled = true, point = "BOTTOM", relativePoint = "BOTTOM", x = 0, y = 260 },
+    stats = { enabled = true, locked = false, point = "CENTER", relativePoint = "CENTER", x = 0, y = -180 },
+    actionBars = { rangeTint = true },
+    quests = { autoAccept = false, autoTurnIn = false, pauseModifier = "shift", minimizeTracker = true },
+    loot = { fastLoot = true, slotDelay = 0 },
+    tooltips = { classColoredNames = true },
     vendor = { autoSellJunk = false, autoRepairMode = "disabled" },
     unitFrames = { classColorHealth = false },
     castbars = {
@@ -56,14 +62,32 @@ events:RegisterEvent("ADDON_LOADED")
 events:RegisterEvent("PLAYER_LOGIN")
 events:SetScript("OnEvent", function(_, event, name)
     if event == "ADDON_LOADED" and name == addonName then
+        local missingSettings = type(ZoidsTools_FDB) ~= "table" or next(ZoidsTools_FDB) == nil
         if type(ZoidsTools_FDB) ~= "table" then ZoidsTools_FDB = {} end
+        local recovery = ZoidsTools_FRecoveryService and ZoidsTools_FRecoveryService:GetSnapshot()
+        -- Retain compatibility with the original local fixed-preset companion.
+        if not recovery then recovery = ZoidsTools_FRecovery end
+        -- Never replace settings the client successfully loaded.
+        if missingSettings and type(recovery) == "table" and next(recovery) then
+            ApplyDefaults(ZoidsTools_FDB, recovery)
+            ns.settingsRecoveryUsed = true
+            ns:Print("Saved settings were missing; restored your recovery snapshot.")
+        end
         ApplyDefaults(ZoidsTools_FDB, defaults)
         ns.db = ZoidsTools_FDB
     elseif event == "PLAYER_LOGIN" then
+        if ZoidsTools_FRecoveryService then ZoidsTools_FRecoveryService:Start(ns.db) end
         ns:InitializeMovableWindows()
         ns:InitializeUnitFrames()
+        ns:InitializePlayerTooltip()
+        ns:InitializeActionButtonRange()
+        ns:InitializeCampfireBar()
+        ns:InitializeStatsWindow()
         ns:InitializeCastbars()
         ns:InitializeVendorAutomation()
+        ns:InitializeFastLoot()
+        ns:InitializeQuestAutomation()
+        ns:InitializeTrackerMinimize()
         ns:InitializeCustomDamageMeter()
         ns:InitializeMinimapButton()
     end
@@ -81,6 +105,18 @@ SlashCmdList.ZOIDSTOOLS_FOREVER = function(message)
         ns:RefreshMovableWindows()
         if ns.UI.RefreshVisiblePage then ns.UI.RefreshVisiblePage() end
         ns:Print((feature == "windows" and "Window movement " or "Bag movement ") .. state .. ".")
+    elseif command == "stats" then
+        ns:OpenConfig("stats")
+    elseif command == "campfire" then
+        ns:OpenConfig("actionbars")
+    elseif command == "actionbars" or command == "range" then
+        ns:OpenConfig("actionbars")
+    elseif command == "quests" or command == "quest" then
+        ns:OpenConfig("quests")
+    elseif command == "loot" or command == "fastloot" then
+        ns:OpenConfig("loot")
+    elseif command == "tooltips" or command == "tooltip" then
+        ns:OpenConfig("tooltips")
     elseif command == "vendor" then
         ns:OpenConfig("vendor")
     elseif command == "castbars" then

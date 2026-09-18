@@ -13,7 +13,11 @@ with tempfile.TemporaryDirectory() as temp:
     with ZipFile(output) as archive:
         names = archive.namelist()
         assert archive.testzip() is None
-        assert all(name.startswith('ZoidsTools_F/') for name in names)
+        assert all(name.startswith(('ZoidsTools_F/', 'ZoidsTools_F_Recovery/')) for name in names)
+        assert 'ZoidsTools_F_Recovery/ZoidsTools_F_Recovery.toc' in names
+        assert 'ZoidsTools_F_Recovery/Recovery.lua' in names
+        assert len([name for name in names if name.startswith('ZoidsTools_F_Recovery/')]) == 2
+        assert not any('/build/' in name for name in names)
         assert 'ZoidsTools_F/ZoidsTools_F.toc' in names
         assert 'ZoidsTools_F/Media/ZoidToolsIcon.png' in names
         assert 'ZoidsTools_F/LICENSE' in names
@@ -22,6 +26,11 @@ with tempfile.TemporaryDirectory() as temp:
         for line in toc.splitlines():
             if line.strip() and not line.startswith('#'):
                 assert 'ZoidsTools_F/' + line.strip().replace('\\', '/') in names
+        recovery_toc = archive.read('ZoidsTools_F_Recovery/ZoidsTools_F_Recovery.toc').decode('utf-8-sig')
+        assert '## SavedVariables: ZoidsTools_FRecoveryDB' in recovery_toc
+        for line in recovery_toc.splitlines():
+            if line.strip() and not line.startswith('#'):
+                assert 'ZoidsTools_F_Recovery/' + line.strip().replace('\\', '/') in names
     try:
         package.build(Path(temp) / 'bad.zip', 'v999.0.0')
     except ValueError:

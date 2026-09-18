@@ -24,25 +24,25 @@ Use Git's browser sign-in if prompted. The connected GitHub account in Codex and
 
 ## Creating a downloadable release
 
-After pushing the main branch, tag the current version:
+Update the version in both `ZoidsTools_F.toc` and `Core.lua`, then enter your summary and description in GitHub Desktop and click **Commit to main**. Open Command Prompt from Desktop. For example, if both files have been updated to `0.2.1-beta`:
 
 ```text
-git tag v0.2.0-beta
-git push origin v0.2.0-beta
+git tag v0.2.1-beta
+git push origin main v0.2.1-beta
 ```
 
-The workflow validates the version, tests, packages, and creates a **draft prerelease** with the installable ZIP. Open **Releases**, review the draft, and publish it when ready. Users should download the attached `ZoidsTools_F-<version>.zip`; GitHub's automatic source-code ZIP has a different folder layout.
+Pushing the new tag starts **Release Forever addon**. It validates the version, runs tests, uploads to CurseForge project **1700355**, and publishes a GitHub release with the installable ZIP. Beta tags produce GitHub prereleases. No manual **Publish release** step is needed. Users should download the attached `ZoidsTools_F-<version>.zip`; GitHub's automatic source-code ZIP has a different folder layout.
 
-No extra secrets are required for the GitHub draft release. If Actions is disabled by your account or organization, enable the workflows in repository settings. See `CONTRIBUTING.md` for local testing and future releases.
+The `CF_API_KEY` secret below is required. GitHub publishing uses its automatic token. If Actions is disabled by your account or organization, enable the workflows in repository settings. Use a new version/tag for each release; do not reuse `v0.2.0-beta`. See `CONTRIBUTING.md` for local testing and future releases.
 
 ## CurseForge uploads
 
 1. In this GitHub repository, open **Settings > Secrets and variables > Actions > New repository secret**. Name it `CF_API_KEY` and enter your CurseForge upload API token. The same account's retail token can be reused, but the secret must be added to this repository separately. Never commit the token.
 2. Commit these workflow changes in GitHub Desktop and click **Push origin**. Ordinary branch pushes run checks only.
-3. To release the current version, create the tag `v0.2.0-beta` on the latest commit in Desktop's History tab, then push the tag. Future tags must match the version in both the TOC and Core.lua.
-4. Wait for **Draft addon release** to finish in GitHub Actions. Open the resulting draft in **Releases**, review it, and click **Publish release**. Publishing the prerelease also triggers uploading.
-5. Watch **Upload Forever release to CurseForge** in Actions. It tests and packages the tagged code, then uploads to project **1700355**. Review the file status on CurseForge; upload success does not bypass moderation.
+3. Update both version fields, commit, and push a new matching tag as shown above.
+4. Watch **Release Forever addon** in GitHub Actions. It uploads automatically; publishing or editing a GitHub release separately does not trigger another upload.
+5. Review the file status on CurseForge; upload success does not bypass moderation.
 
 The upload script checks the TOC project ID and resolves its exact game version (currently `1.60.1`) using CurseForge's version list. It stops if that version is unavailable or ambiguous rather than choosing another client. Beta tags upload as Beta, alpha tags as Alpha, and plain version tags as Release.
 
-Do not rerun a successful upload workflow: it could create a duplicate file. After a timeout, check CurseForge's Files page before retrying. The first tag must include the new workflow and upload script; publishing a tag from before these changes will not work.
+Do not rerun after a successful CurseForge upload: it could create a duplicate file, even if the later GitHub release step failed. After a timeout, check CurseForge's Files page before retrying. The new tag must include these workflow changes; existing tags retain their old workflow behavior.

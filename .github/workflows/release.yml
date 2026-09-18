@@ -1,4 +1,4 @@
-name: Draft addon release
+name: Release Forever addon
 
 on:
   push:
@@ -6,6 +6,10 @@ on:
 
 permissions:
   contents: write
+
+concurrency:
+  group: forever-release-${{ github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -22,17 +26,23 @@ jobs:
         run: |
           python Tests/smoke.py
           python Tests/package_test.py
+          python Tests/curseforge_test.py
       - name: Package matching version
         env:
           RELEASE_TAG: ${{ github.ref_name }}
         run: python Tools/package.py --tag "$RELEASE_TAG"
-      - name: Create draft release with addon ZIP
+      - name: Upload to Forever CurseForge project 1700355
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python Tools/upload_curseforge.py
+      - name: Publish GitHub release with addon ZIP
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         shell: bash
         run: |
-          options=(--draft --verify-tag --title "$RELEASE_TAG" --generate-notes)
+          options=(--verify-tag --title "$RELEASE_TAG" --generate-notes)
           if [[ "$RELEASE_TAG" == *-* ]]; then
             options+=(--prerelease)
           fi

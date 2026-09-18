@@ -53,8 +53,18 @@ local function BuildWindow()
     castbarsButton:SetPoint("TOPLEFT", 8, -132)
     local vendorButton = UI.CreateButton(sidebar, "Vendor", 126, 32)
     vendorButton:SetPoint("TOPLEFT", 8, -172)
-    local note = UI.CreateBodyText(sidebar, "ZoidsTools style\nForever foundation\n\nv" .. ns.version, 116)
-    note:SetPoint("TOPLEFT", 12, -222)
+    local tooltipsButton = UI.CreateButton(sidebar, "Tooltips", 126, 32)
+    tooltipsButton:SetPoint("TOPLEFT", 8, -212)
+    local lootButton = UI.CreateButton(sidebar, "Loot", 126, 32)
+    lootButton:SetPoint("TOPLEFT", 8, -252)
+    local questsButton = UI.CreateButton(sidebar, "Quests", 126, 32)
+    questsButton:SetPoint("TOPLEFT", 8, -292)
+    local actionBarsButton = UI.CreateButton(sidebar, "Action Bars", 126, 32)
+    actionBarsButton:SetPoint("TOPLEFT", 8, -332)
+    local statsButton = UI.CreateButton(sidebar, "Stats", 126, 32)
+    statsButton:SetPoint("TOPLEFT", 8, -372)
+    local note = UI.CreateBodyText(sidebar, "v" .. ns.version, 116)
+    note:SetPoint("TOPLEFT", 12, -424)
 
     local page = CreateFrame("Frame", nil, frame)
     page:SetPoint("TOPLEFT", 180, -90)
@@ -126,25 +136,52 @@ local function BuildWindow()
     local unitFramesPage = UI.CreateUnitFramesPage(frame)
     local castbarsPage = UI.CreateCastbarsPage(frame)
     local vendorPage = UI.CreateVendorPage(frame)
+    local tooltipsPage = UI.CreateTooltipsPage(frame)
+    local lootPage = UI.CreateLootPage(frame)
+    local questsPage = UI.CreateQuestsPage(frame)
+    local actionBarsPage = UI.CreateActionBarsPage(frame)
+    local statsPage = UI.CreateStatsPage(frame)
     local activePage = page
     function frame:SelectPage(key)
         local isWindows = key == "windows" or key == "bags"
         local isUnitFrames = key == "unitframes"
         local isCastbars = key == "castbars"
         local isVendor = key == "vendor"
+        local isTooltips = key == "tooltips"
+        local isLoot = key == "loot"
+        local isQuests = key == "quests"
+        local isActionBars = key == "actionbars"
+        local isStats = key == "stats"
         activePage = isVendor and vendorPage or (isCastbars and castbarsPage or (isUnitFrames and unitFramesPage or (isWindows and windowsPage or page)))
-        page:SetShown(not isWindows and not isUnitFrames and not isCastbars and not isVendor)
+        if isTooltips then activePage = tooltipsPage end
+        if isLoot then activePage = lootPage end
+        if isQuests then activePage = questsPage end
+        if isActionBars then activePage = actionBarsPage end
+        if isStats then activePage = statsPage end
+        page:SetShown(activePage == page)
         windowsPage:SetShown(isWindows)
         unitFramesPage:SetShown(isUnitFrames)
         castbarsPage:SetShown(isCastbars)
         vendorPage:SetShown(isVendor)
-        selected:SetStyledSelected(not isWindows and not isUnitFrames and not isCastbars and not isVendor)
+        tooltipsPage:SetShown(isTooltips)
+        lootPage:SetShown(isLoot)
+        questsPage:SetShown(isQuests)
+        actionBarsPage:SetShown(isActionBars)
+        statsPage:SetShown(isStats)
+        selected:SetStyledSelected(activePage == page)
         windowsButton:SetStyledSelected(isWindows)
         unitFramesButton:SetStyledSelected(isUnitFrames)
         castbarsButton:SetStyledSelected(isCastbars)
         vendorButton:SetStyledSelected(isVendor)
+        tooltipsButton:SetStyledSelected(isTooltips)
+        lootButton:SetStyledSelected(isLoot)
+        questsButton:SetStyledSelected(isQuests)
+        actionBarsButton:SetStyledSelected(isActionBars)
+        statsButton:SetStyledSelected(isStats)
         local section = isVendor and "VENDOR" or (isCastbars and "CASTBARS" or (isUnitFrames and "UNIT FRAMES" or (isWindows and "WINDOWS & BAGS" or "DAMAGE METERS")))
-        subtitle:SetText("FOREVER BETA  /  " .. section)
+        subtitle:SetText("FOREVER BETA  /  " .. (isQuests and "QUESTS" or (isLoot and "LOOT" or (isTooltips and "TOOLTIPS" or section))))
+        if isActionBars then subtitle:SetText("FOREVER BETA  /  ACTION BARS") end
+        if isStats then subtitle:SetText("FOREVER BETA  /  STATS") end
         activePage:Refresh()
     end
     selected:SetScript("OnClick", function() frame:SelectPage("meters") end)
@@ -152,6 +189,11 @@ local function BuildWindow()
     unitFramesButton:SetScript("OnClick", function() frame:SelectPage("unitframes") end)
     castbarsButton:SetScript("OnClick", function() frame:SelectPage("castbars") end)
     vendorButton:SetScript("OnClick", function() frame:SelectPage("vendor") end)
+    tooltipsButton:SetScript("OnClick", function() frame:SelectPage("tooltips") end)
+    lootButton:SetScript("OnClick", function() frame:SelectPage("loot") end)
+    questsButton:SetScript("OnClick", function() frame:SelectPage("quests") end)
+    actionBarsButton:SetScript("OnClick", function() frame:SelectPage("actionbars") end)
+    statsButton:SetScript("OnClick", function() frame:SelectPage("stats") end)
     UI.RefreshVisiblePage = function() if frame:IsShown() then activePage:Refresh() end end
     frame:SetScript("OnShow", function() activePage:Refresh() end)
     frame:Hide()

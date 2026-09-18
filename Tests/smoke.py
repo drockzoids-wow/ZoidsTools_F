@@ -5,10 +5,14 @@ import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--runtime')
+parser.add_argument('--saved-variables', help='Optional read-only check of an existing SavedVariables file')
 args = parser.parse_args()
 if args.runtime:
     sys.path.insert(0, args.runtime)
 from lupa.lua51 import LuaRuntime
+from persistence import check_persistence
+
+check_persistence(LuaRuntime, args.saved_variables)
 
 root = Path(__file__).resolve().parents[1]
 lua = LuaRuntime(unpack_returned_tuples=True)
@@ -104,3 +108,60 @@ vendor_ns = vendor_lua.eval('{ db = { vendor = { autoSellJunk = false, autoRepai
 vendor_lua.execute((root / 'Modules/VendorAutomation.lua').read_text(encoding='utf-8'), 'ZoidsTools_F', vendor_ns)
 vendor_lua.globals().RunVendorTests(vendor_ns)
 print('PASS: popup-free bulk junk sale, repair funding, delayed proceeds, Shift skip, missing API/button, and stale visit cancellation')
+for legacy in [False, True]:
+    tooltip_lua = LuaRuntime(unpack_returned_tuples=True)
+    tooltip_lua.execute((root / 'Tests/tooltips.lua').read_text(encoding='utf-8'))
+    if legacy:
+        tooltip_lua.execute('TooltipDataProcessor = nil; CreateColor = nil')
+    tooltip_ns = tooltip_lua.eval('{ db = { tooltips = { classColoredNames = true } } }')
+    tooltip_lua.execute((root / 'Modules/PlayerTooltip.lua').read_text(encoding='utf-8'), 'ZoidsTools_F', tooltip_ns)
+    tooltip_lua.globals().RunTooltipTests(tooltip_ns, legacy)
+print('PASS: retail/legacy tooltip colors, custom class colors, NPC exclusion, settings, restoration, and restricted data')
+loot_lua = LuaRuntime(unpack_returned_tuples=True)
+loot_lua.execute((root / 'Tests/fastloot.lua').read_text(encoding='utf-8'))
+loot_ns = loot_lua.eval('{ db = { loot = { fastLoot = true, slotDelay = 0 } } }')
+for file in ['Compatibility.lua', 'Modules/FastLoot.lua']:
+    loot_lua.execute((root / file).read_text(encoding='utf-8'), 'ZoidsTools_F', loot_ns)
+loot_lua.globals().RunFastLootTests(loot_ns)
+print('PASS: single-pass loot, pacing, duplicate events, cancellation, modifiers, locked slots, and restricted data')
+quest_lua = LuaRuntime(unpack_returned_tuples=True)
+quest_lua.execute((root / 'Tests/quests.lua').read_text(encoding='utf-8'))
+quest_ns = quest_lua.eval('{ db = { quests = { autoAccept = false, autoTurnIn = false, pauseModifier = "shift" } } }')
+for file in ['Compatibility.lua', 'Modules/QuestAutomation.lua']:
+    quest_lua.execute((root / file).read_text(encoding='utf-8'), 'ZoidsTools_F', quest_ns)
+quest_lua.globals().RunQuestTests(quest_ns)
+print('PASS: quest acceptance, completed-quest selection, pause modifiers, reward choices, duplicate claims, and missing APIs')
+
+range_lua = LuaRuntime(unpack_returned_tuples=True)
+range_lua.execute((root / 'Tests/range.lua').read_text(encoding='utf-8'))
+range_ns = range_lua.eval('{ db = { actionBars = { rangeTint = true } } }')
+range_lua.execute((root / 'Modules/ActionButtonRange.lua').read_text(encoding='utf-8'), 'ZoidsTools_F', range_ns)
+range_lua.globals().RunRangeTests(range_ns)
+print('PASS: action range overlay, polling, paging, toggle, combat setup, legacy APIs, and restricted/missing data')
+
+stats_lua = LuaRuntime(unpack_returned_tuples=True)
+stats_lua.execute((root / 'Tests/stats.lua').read_text(encoding='utf-8'))
+stats_ns = stats_lua.eval('''{ db = { stats = { enabled = true, locked = false,
+    point = "CENTER", relativePoint = "CENTER", x = 0, y = -180 } },
+    UI = { Theme = { ApplyPanelBackdrop = function() end, colors = { gold = { 1, 0.8, 0.2 } } } }
+}''')
+stats_lua.execute((root / 'Modules/StatsWindow.lua').read_text(encoding='utf-8'), 'ZoidsTools_F', stats_ns)
+stats_lua.globals().RunStatsTests(stats_ns)
+print('PASS: stats display, speed conversion, saved dragging, lock/click-through, hover tooltips, combat, reset, and restricted APIs')
+
+tracker_lua = LuaRuntime(unpack_returned_tuples=True)
+tracker_lua.execute((root / 'Tests/tracker.lua').read_text(encoding='utf-8'))
+tracker_ns = tracker_lua.eval('{ db = { quests = { minimizeTracker = true } } }')
+tracker_lua.execute((root / 'Modules/TrackerMinimize.lua').read_text(encoding='utf-8'), 'ZoidsTools_F', tracker_ns)
+tracker_lua.globals().RunTrackerMinimizeTests(tracker_ns)
+print('PASS: tracker collapse/expand, native alpha restoration, button preservation, toggle, Edit Mode, and missing/restricted state')
+
+camp_lua = LuaRuntime(unpack_returned_tuples=True)
+camp_lua.execute((root / 'Tests/campfire.lua').read_text(encoding='utf-8'))
+camp_ns = camp_lua.eval('''{ db = { campfire = { enabled = true, point = "BOTTOM", relativePoint = "BOTTOM", x = 0, y = 260 } },
+    UI = { Theme = { ApplyPanelBackdrop = function() end, colors = { gold = { 1, 0.8, 0.2 } } } }
+}''')
+for file in ['Compatibility.lua', 'Modules/CampfireBar.lua']:
+    camp_lua.execute((root / file).read_text(encoding='utf-8'), 'ZoidsTools_F', camp_ns)
+camp_lua.globals().RunCampfireTests(camp_ns)
+print('PASS: campfire aura gating, item discovery, duplicate stacks, secure item bindings, delayed data, cooldowns, dragging, and combat deferral')
