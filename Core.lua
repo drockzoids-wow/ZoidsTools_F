@@ -1,7 +1,7 @@
 local addonName, ns = ...
 ns.addonName = addonName
 ns.title = "ZoidsTools Forever"
-ns.version = "0.2.1-beta"
+ns.version = "0.2.2-beta"
 
 local defaults = {
     campfire = { enabled = true, point = "BOTTOM", relativePoint = "BOTTOM", x = 0, y = 260 },
@@ -65,12 +65,19 @@ events:SetScript("OnEvent", function(_, event, name)
         local missingSettings = type(ZoidsTools_FDB) ~= "table" or next(ZoidsTools_FDB) == nil
         if type(ZoidsTools_FDB) ~= "table" then ZoidsTools_FDB = {} end
         local recovery = ZoidsTools_FRecoveryService and ZoidsTools_FRecoveryService:GetSnapshot()
+        ns.settingsStartup = {
+            main = not missingSettings,
+            backup = type(recovery) == "table" and next(recovery) ~= nil,
+            preset = type(ZoidsTools_FRecovery) == "table" and next(ZoidsTools_FRecovery) ~= nil,
+            source = missingSettings and "defaults" or "main save",
+        }
         -- Retain compatibility with the original local fixed-preset companion.
         if not recovery then recovery = ZoidsTools_FRecovery end
         -- Never replace settings the client successfully loaded.
         if missingSettings and type(recovery) == "table" and next(recovery) then
             ApplyDefaults(ZoidsTools_FDB, recovery)
             ns.settingsRecoveryUsed = true
+            ns.settingsStartup.source = ns.settingsStartup.backup and "recovery save" or "local preset"
             ns:Print("Saved settings were missing; restored your recovery snapshot.")
         end
         ApplyDefaults(ZoidsTools_FDB, defaults)
@@ -127,6 +134,33 @@ SlashCmdList.ZOIDSTOOLS_FOREVER = function(message)
         ns:OpenConfig("windows")
     elseif command == "status" then
         ns:Print(ns:GetCompatibilityStatus())
+    elseif command == "restorepreset" then
+        if type(ZoidsTools_FRecovery) ~= "table" or not next(ZoidsTools_FRecovery) then
+            ns:Print("No local recovery preset is installed.")
+            return
+        end
+        if InCombatLockdown and InCombatLockdown() then
+            ns:Print("Restore your preset after leaving combat.")
+            return
+        end
+        if not ReloadUI then return end
+        -- Explicit user command: replace settings, including a nonempty reset save.
+        local restored = {}
+        ApplyDefaults(restored, ZoidsTools_FRecovery)
+        ApplyDefaults(restored, defaults)
+        ZoidsTools_FDB = restored
+        ns.db = restored
+        if ZoidsTools_FRecoveryService then ZoidsTools_FRecoveryService:Start(restored) end
+        ReloadUI()
+    elseif command == "recovery" then
+        local startup = ns.settingsStartup
+        if startup then
+            ns:Print("Settings at startup: main=" .. (startup.main and "present" or "missing")
+                .. ", backup=" .. (startup.backup and "present" or "missing")
+                .. ", local preset=" .. (startup.preset and "present" or "missing")
+                .. "; using " .. startup.source .. ".")
+            ns:Print("Snapshots update in memory; disk saves happen on reload/logout. A local preset is a fixed copy.")
+        end
     elseif command == "preview" then
         ns:ToggleCustomDamageMeterMoveMode()
     elseif command == "on" or command == "off" then

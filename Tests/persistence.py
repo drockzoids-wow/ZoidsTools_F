@@ -17,7 +17,8 @@ def check_persistence(LuaRuntime, saved_file=None):
                 return frame
             end
             SlashCmdList = {}
-            DEFAULT_CHAT_FRAME = { AddMessage = function() end }
+            messages = {}
+            DEFAULT_CHAT_FRAME = { AddMessage = function(_, text) messages[#messages + 1] = text end }
             tickers = {}
             C_Timer = { NewTicker = function(interval, callback)
                 local ticker = { interval = interval, callback = callback }
@@ -136,6 +137,46 @@ def check_persistence(LuaRuntime, saved_file=None):
         ''')
     priority = start('ZoidsTools_FDB={stats={x=88}}', backup, bundled=True)
     priority.execute('assert(not ns.settingsRecoveryUsed and ns.db.stats.x == 88)')
+    priority.execute("assert(ns.settingsStartup.main and ns.settingsStartup.backup and ns.settingsStartup.source == 'main save')")
+    lost = start(bundled=True)
+    lost.execute('''
+        assert(not ns.settingsStartup.main and not ns.settingsStartup.backup)
+        assert(ns.settingsStartup.source == 'defaults')
+        ZoidsTools_FRecoveryService:Start(ns.db)
+        assert(ZoidsTools_FRecoveryDB.stats.locked == false)
+        -- A freshly generated backup must not mask what failed to load.
+        SlashCmdList.ZOIDSTOOLS_FOREVER('recovery')
+        assert(messages[#messages - 1]:find('main=missing, backup=missing', 1, true))
+    ''')
+    preset = start(recovery=recovery, bundled=True)
+    preset.execute('''
+        assert(ns.settingsStartup.source == 'local preset')
+        assert(ns.settingsStartup.preset and not ns.settingsStartup.backup)
+        assert(ns.db.stats.locked and ns.db.stats.x == 321)
+        ZoidsTools_FRecoveryService:Start(ns.db)
+        ns.db.stats.x = 100
+        tickers[1].callback()
+        assert(ZoidsTools_FRecoveryDB.stats.x == 100 and ZoidsTools_FRecovery.stats.x == 321)
+        assert(ns.settingsStartup.source == 'local preset')
+    ''')
+    preferred_backup = start(recovery=backup + '\n' + recovery, bundled=True)
+    preferred_backup.execute("assert(ns.db.stats.x == 600 and ns.settingsStartup.source == 'recovery save')")
+    manual = start('ZoidsTools_FDB={stats={locked=false,x=0}}', recovery, bundled=True)
+    manual.execute('''
+        reloads = 0
+        function ReloadUI() reloads = reloads + 1 end
+        function InCombatLockdown() return true end
+        SlashCmdList.ZOIDSTOOLS_FOREVER('restorepreset')
+        assert(reloads == 0 and ns.db.stats.x == 0)
+        function InCombatLockdown() return false end
+        SlashCmdList.ZOIDSTOOLS_FOREVER('restorepreset')
+        assert(reloads == 1 and ns.db == ZoidsTools_FDB and ns.db.stats.x == 321)
+        assert(ZoidsTools_FRecoveryDB.stats.locked)
+        ns.db.stats.x = 200
+        assert(ZoidsTools_FRecovery.stats.x == 321)
+        tickers[1].callback()
+        assert(ZoidsTools_FRecoveryDB.stats.x == 200)
+    ''')
     # A companion with the main addon disabled must preserve its existing backup.
     idle = start(recovery=backup, bundled=True)
     idle.execute("frames[1].handler(nil, 'PLAYER_LOGOUT'); assert(ZoidsTools_FRecoveryDB.stats.x == 600 and #tickers == 0)")

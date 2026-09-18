@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.2.2-beta
+
+- Added `/ztf recovery` to report which settings sources were available before startup defaults and snapshots, so a failed login load remains diagnosable after the timer runs.
+- Added optional `ZoidsTools_F_Preset` load ordering for a separate, private fixed-preset addon when both SavedVariables files fail to load. Personal presets are not included in releases and do not update automatically.
+- Added `/ztf restorepreset` to explicitly replace current settings from an installed local preset, refresh the recovery snapshot, and reload the UI. This is blocked during combat.
+
 ## 0.2.1-beta
 
 - Added an automatic campfire item bar, enabled by default: appears with Welcoming Campfire and carried usable items whose English tooltips require a campfire. Includes item counts, cooldowns, tooltips, saved dragging, and secure combat hiding (`/ztf campfire`).
