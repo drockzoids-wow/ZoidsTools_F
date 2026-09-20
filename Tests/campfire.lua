@@ -11,6 +11,7 @@ local function Region()
     function r:SetAllPoints() end
     function r:SetPoint() end
     function r:SetText(v) self.text = v end
+    function r:GetStringWidth() return #self.text * 8 end
     function r:SetTextColor() end
     function r:SetTexture(v) self.texture = v end
     function r:SetTexCoord() end
@@ -37,6 +38,8 @@ function CreateFrame(kind, name, parent, template)
     function f:RegisterForDrag() end
     function f:RegisterForClicks(...) self.clicks = {...} end
     function f:SetHighlightTexture() end
+    function f:SetBackdrop(v) self.backdrop = v end
+    function f:SetBackdropBorderColor(...) self.borderColor = {...} end
     function f:RegisterEvent() end
     function f:SetScript(event, fn) self.scripts[event] = fn end
     function f:SetAttribute(k,v) Check(self); self.attributes[k] = v end
@@ -121,7 +124,10 @@ function RunCampfireTests(ns)
     assert(not bar:IsShown(), 'Unrelated fire buffs must not show the bar')
     buffs = {{name='Campfire Nearby'}}
     watcher.scripts.OnEvent(nil,'UNIT_AURA','player')
-    assert(not bar:IsShown(), 'The proximity buff alone must not show the bar')
+    assert(bar:IsShown(), 'Campfire Nearby alone must show the bar with matching items')
+    buffs = {}
+    watcher.scripts.OnEvent(nil,'UNIT_AURA','player')
+    assert(not bar:IsShown(), 'Removing Campfire Nearby must hide the bar')
     buffs = {{name='Welcoming Campfire'}}
     watcher.scripts.OnEvent(nil,'UNIT_AURA','player')
     assert(bar:IsShown())
@@ -169,7 +175,9 @@ function RunCampfireTests(ns)
     assert(not bar:IsShown())
     C_UnitAuras = nil
     function UnitBuff(_,index) return index == 1 and 'Welcoming Campfire' or nil end
-    assert(ns:HasWelcomingCampfire())
+    assert(ns:HasCampfireBuff())
+    function UnitBuff(_,index) return index == 1 and 'Campfire Nearby' or nil end
+    assert(ns:HasCampfireBuff(), 'Legacy aura lookup must also accept Campfire Nearby')
     C_TooltipInfo = nil
     assert(#ns:FindCampfireItems() == 0)
 end

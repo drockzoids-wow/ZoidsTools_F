@@ -27,7 +27,15 @@ function UI.CreateQuestsPage(parent)
         function() return ns:GetTrackerMinimizeToButton() end,
         function(value) ns:SetTrackerMinimizeToButton(value) end)
     minimize:SetPoint("TOPLEFT", 0, -350)
-    function page:Refresh() accept:Refresh(); turnIn:Refresh(); modifier:Refresh(); minimize:Refresh() end
+    local reputation = UI.CreateCheckbox(page, "Track reputation for the current area",
+        "Automatically watch the faction for recognized home zones and neutral towns. Unmapped areas keep your selection. Changes wait until combat ends.",
+        function() return ns:GetZoneReputationEnabled() end,
+        function(value) ns:SetZoneReputationEnabled(value) end)
+    reputation:SetPoint("TOPLEFT", 0, -400)
+    local repHelp = UI.CreateBodyText(page,
+        "For example: Dun Morogh, Loch Modan and Wetlands track Ironforge. Uses English area names; enabled by default.", 510)
+    repHelp:SetPoint("TOPLEFT", 0, -440)
+    function page:Refresh() accept:Refresh(); turnIn:Refresh(); modifier:Refresh(); minimize:Refresh(); reputation:Refresh() end
     page:SetScript("OnShow", function(self) self:Refresh() end)
     page:Hide()
     return page

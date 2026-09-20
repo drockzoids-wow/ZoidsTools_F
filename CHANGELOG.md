@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.2.3-beta
+
+- Added automatic watched reputation selection for recognized Alliance/Horde home zones and neutral towns, enabled by default under Quests (`/ztf rep`). Uses English zone/subzone names and zone events, retains the selection in unmapped areas, and defers changes during combat. Unknown factions are retried on reputation updates; manual selections persist until entering an area mapped to a different faction. Legacy clients require the faction to be visible in the reputation list.
+
+- Fixed the campfire item bar to appear with either Campfire Nearby or Welcoming Campfire when matching usable items are carried.
+- Enlarged and corrected the campfire bar title to "CAMPFIRE NEARBY". The bar now fits the heading at minimum, grows for additional items, and centers each item row with thin gold item outlines.
+
 ## 0.2.2-beta
 
 - Added `/ztf recovery` to report which settings sources were available before startup defaults and snapshots, so a failed login load remains diagnosable after the timer runs.

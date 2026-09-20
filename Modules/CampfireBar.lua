@@ -1,5 +1,5 @@
 local _, ns = ...
-local watcher, bar, controller
+local watcher, bar, controller, title
 local buttons, entries = {}, {}
 local dirty = true
 local nearby = false
@@ -29,7 +29,7 @@ local function InCombat()
     return InCombatLockdown and InCombatLockdown()
 end
 
-function ns:HasWelcomingCampfire()
+function ns:HasCampfireBuff()
     if InCombat() then return false end
     for index = 1, 255 do
         local aura = Call(C_UnitAuras and C_UnitAuras.GetAuraDataByIndex, "player", index, "HELPFUL")
@@ -42,7 +42,8 @@ function ns:HasWelcomingCampfire()
         elseif aura == nil then
             break
         end
-        if Text(name) == "welcoming campfire" then return true end
+        local normalizedName = Text(name)
+        if normalizedName == "welcoming campfire" or normalizedName == "campfire nearby" then return true end
     end
     return false
 end
@@ -134,9 +135,9 @@ local function CreateBar()
         for _, button in ipairs(buttons) do HideTooltip(button) end
     end)
     ns.UI.Theme.ApplyPanelBackdrop(bar)
-    local title = bar:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    title = bar:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     title:SetPoint("TOP", 0, -6)
-    title:SetText("CAMPFIRE")
+    title:SetText("CAMPFIRE NEARBY")
     title:SetTextColor(unpack(ns.UI.Theme.colors.gold))
     local db = ns.db.campfire
     bar:SetPoint(db.point, UIParent, db.relativePoint, db.x, db.y)
@@ -145,17 +146,20 @@ local function CreateBar()
 end
 
 local function CreateButton(index)
-    local button = CreateFrame("Button", nil, bar, "SecureActionButtonTemplate")
+    local button = CreateFrame("Button", nil, bar, "SecureActionButtonTemplate,BackdropTemplate")
     button:SetSize(32, 32)
+    button:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1 })
+    button:SetBackdropBorderColor(0.82, 0.62, 0.28, 1)
     button:RegisterForClicks("LeftButtonUp")
     button:SetAttribute("useOnKeyDown", false)
     button:SetAttribute("type1", "item")
     button.icon = button:CreateTexture(nil, "ARTWORK")
-    button.icon:SetAllPoints()
+    button.icon:SetPoint("TOPLEFT", 1, -1)
+    button.icon:SetPoint("BOTTOMRIGHT", -1, 1)
     button.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
     button:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
     button.cooldown = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
-    button.cooldown:SetAllPoints()
+    button.cooldown:SetAllPoints(button.icon)
     button.count = button:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
     button.count:SetPoint("BOTTOMRIGHT", -1, 1)
     button:SetScript("OnEnter", function(self)
@@ -191,7 +195,9 @@ end
 
 local function Layout()
     local columns = math.min(10, #entries)
-    bar:SetSize(math.max(100, columns * 36 + 8), math.ceil(#entries / 10) * 36 + 24)
+    local itemWidth = columns * 36 - 4
+    local width = math.max(math.ceil(title:GetStringWidth()) + 16, itemWidth + 12)
+    bar:SetSize(width, math.ceil(#entries / 10) * 36 + 28)
     for i, entry in ipairs(entries) do
         local button = buttons[i] or CreateButton(i)
         if not button.entry or button.entry.id ~= entry.id then HideTooltip(button) end
@@ -199,7 +205,9 @@ local function Layout()
         -- Item-ID binding stays correct if the player sorts bags or uses up a stack.
         button:SetAttribute("item1", "item:" .. entry.id)
         button:ClearAllPoints()
-        button:SetPoint("TOPLEFT", 6 + ((i - 1) % 10) * 36, -20 - math.floor((i - 1) / 10) * 36)
+        local row = math.floor((i - 1) / 10)
+        local rowWidth = math.min(10, #entries - row * 10) * 36 - 4
+        button:SetPoint("TOPLEFT", (width - rowWidth) / 2 + ((i - 1) % 10) * 36, -24 - row * 36)
         button.icon:SetTexture(entry.icon or 134400)
         button.count:SetText(entry.count > 1 and tostring(entry.count) or "")
         button:Show()
@@ -221,7 +229,7 @@ function ns:GetCampfireBarStatus()
     if type(RegisterStateDriver) ~= "function" then return "Campfire bar is unavailable on this client." end
     if not C_TooltipInfo or not C_TooltipInfo.GetBagItem then return "Item tooltip scanning is unavailable on this client." end
     if InCombat() then return "Campfire bar is hidden during combat." end
-    if not nearby then return "Waiting for Welcoming Campfire. Found " .. #entries .. " matching item types in your bags." end
+    if not nearby then return "Waiting for Welcoming Campfire or Campfire Nearby. Found " .. #entries .. " matching item types in your bags." end
     return #entries == 0 and "Campfire nearby, but no matching usable items found in your bags."
         or ("Campfire nearby: " .. #entries .. " item types available.")
 end
@@ -235,7 +243,7 @@ function ns:RefreshCampfireBar(rescan)
     end
     if not CreateBar() then return end
     local wasNearby = nearby
-    nearby = self:HasWelcomingCampfire()
+    nearby = self:HasCampfireBuff()
     if nearby and not wasNearby then dirty = true end
     if dirty then
         entries = self:FindCampfireItems()

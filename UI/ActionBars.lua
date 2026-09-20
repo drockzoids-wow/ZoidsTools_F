@@ -14,7 +14,7 @@ function UI.CreateActionBarsPage(parent)
         "Out-of-range actions receive a full-icon red overlay, matching retail ZoidsTools. Enabled by default.\n\nSupports Blizzard's main and additional action bars, plus action-slot buttons on vehicle, override, and extra-action bars.\n\nThe overlay clears when you move into range or the action has no known range result. Blizzard's normal icon colors and cooldowns remain underneath.", 500)
     description:SetPoint("TOPLEFT", 0, -54)
     local campfire = UI.CreateCheckbox(page, "Show campfire item bar",
-        "Show carried camp items while you have the Welcoming Campfire buff. Hidden during combat.",
+        "Show carried camp items while you have the Welcoming Campfire or Campfire Nearby buff. Hidden during combat.",
         function() return ns:GetCampfireBarEnabled() end,
         function(value) ns:SetCampfireBarEnabled(value) end)
     campfire:SetPoint("TOPLEFT", 0, -240)

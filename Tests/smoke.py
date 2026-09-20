@@ -165,3 +165,11 @@ for file in ['Compatibility.lua', 'Modules/CampfireBar.lua']:
     camp_lua.execute((root / file).read_text(encoding='utf-8'), 'ZoidsTools_F', camp_ns)
 camp_lua.globals().RunCampfireTests(camp_ns)
 print('PASS: campfire aura gating, item discovery, duplicate stacks, secure item bindings, delayed data, cooldowns, dragging, and combat deferral')
+
+rep_lua = LuaRuntime(unpack_returned_tuples=True)
+rep_lua.execute((root / 'Tests/reputation.lua').read_text(encoding='utf-8'))
+rep_ns = rep_lua.eval('{ db = { reputation = { autoZone = true } } }')
+for file in ['Compatibility.lua', 'Modules/ZoneReputation.lua']:
+    rep_lua.execute((root / file).read_text(encoding='utf-8'), 'ZoidsTools_F', rep_ns)
+rep_lua.globals().RunReputationTests(rep_ns)
+print('PASS: zone reputation, faction/town selection, duplicate and recursive events, manual overrides, combat deferral, delayed data, disabled mode, instances, restricted names, and legacy fallback')

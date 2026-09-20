@@ -1,9 +1,10 @@
 local addonName, ns = ...
 ns.addonName = addonName
 ns.title = "ZoidsTools Forever"
-ns.version = "0.2.2-beta"
+ns.version = "0.2.3-beta"
 
 local defaults = {
+    reputation = { autoZone = true },
     campfire = { enabled = true, point = "BOTTOM", relativePoint = "BOTTOM", x = 0, y = 260 },
     stats = { enabled = true, locked = false, point = "CENTER", relativePoint = "CENTER", x = 0, y = -180 },
     actionBars = { rangeTint = true },
@@ -89,6 +90,7 @@ events:SetScript("OnEvent", function(_, event, name)
         ns:InitializePlayerTooltip()
         ns:InitializeActionButtonRange()
         ns:InitializeCampfireBar()
+        ns:InitializeZoneReputation()
         ns:InitializeStatsWindow()
         ns:InitializeCastbars()
         ns:InitializeVendorAutomation()
@@ -112,6 +114,11 @@ SlashCmdList.ZOIDSTOOLS_FOREVER = function(message)
         ns:RefreshMovableWindows()
         if ns.UI.RefreshVisiblePage then ns.UI.RefreshVisiblePage() end
         ns:Print((feature == "windows" and "Window movement " or "Bag movement ") .. state .. ".")
+    elseif (feature == "rep" or feature == "reputation") and (state == "on" or state == "off") then
+        ns:SetZoneReputationEnabled(state == "on")
+        ns:Print("Automatic zone reputation " .. state .. ".")
+    elseif command == "rep" or command == "reputation" then
+        ns:OpenConfig("quests")
     elseif command == "stats" then
         ns:OpenConfig("stats")
     elseif command == "campfire" then
