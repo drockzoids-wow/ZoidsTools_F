@@ -1,7 +1,7 @@
 local _, ns = ...
 local watcher, target, pending
 
--- English zone names are intentional: Forever's new maps need not share retail map IDs.
+-- English aliases also cover beta clients with missing area-name data.
 local alliance = {
     ["Ironforge"] = 47, ["Dun Morogh"] = 47, ["Loch Modan"] = 47, ["Wetlands"] = 47,
     ["Stormwind City"] = 72, ["Stormwind"] = 72, ["Elwynn Forest"] = 72,
@@ -29,6 +29,27 @@ local function Name(fn)
     return type(value) == "string" and value or ""
 end
 
+-- AreaTable IDs, NOT UI map IDs. Resolve names through the client's own locale data.
+local areas = {
+    { alliance, 1537, 47 }, { alliance, 1, 47 }, { alliance, 38, 47 }, { alliance, 11, 47 },
+    { alliance, 1519, 72 }, { alliance, 12, 72 }, { alliance, 40, 72 }, { alliance, 44, 72 }, { alliance, 10, 72 },
+    { alliance, 1657, 69 }, { alliance, 141, 69 }, { alliance, 148, 69 },
+    { horde, 1637, 76 }, { horde, 14, 76 }, { horde, 1638, 81 }, { horde, 215, 81 },
+    { horde, 1497, 68 }, { horde, 85, 68 }, { horde, 130, 68 },
+    { towns, 35, 21 }, { towns, 392, 470 }, { towns, 976, 369 }, { towns, 2255, 577 },
+}
+local function LocalizeAreas()
+    for _, entry in ipairs(areas) do
+        if not entry.loaded then
+            local name = Call(C_Map and C_Map.GetAreaInfo or GetAreaInfo, entry[2])
+            if type(name) == "string" and name ~= "" then
+                entry[1][name] = entry[3]
+                entry.loaded = true
+            end
+        end
+    end
+end
+
 function ns:GetZoneReputationEnabled()
     return self.db and self.db.reputation and self.db.reputation.autoZone == true
 end
@@ -36,6 +57,7 @@ end
 local function DesiredFaction()
     -- Avoid assigning outdoor city reputations to dungeons and battlegrounds.
     if Call(IsInInstance) then return nil end
+    LocalizeAreas()
     local zone, subzone = Name(GetRealZoneText), Name(GetSubZoneText)
     local side = Call(UnitFactionGroup, "player")
     local zones = side == "Alliance" and alliance or side == "Horde" and horde or {}

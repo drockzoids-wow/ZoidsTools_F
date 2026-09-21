@@ -74,6 +74,8 @@ def check_persistence(LuaRuntime, saved_file=None):
         db.stats.locked = true
         db.stats.x, db.stats.y = 123, -456
         db.castbars.player = { enabled = true, width = 310, height = 25 }
+        db.windows.bagAnchorCorner = "BOTTOMRIGHT"
+        db.windows.bagAnchor = {point="BOTTOMRIGHT",x=700,y=120}
         db.windows.enabled = false
         db.windows.moveBags = false
         db.windows.points.CharacterFrame = { point = 'CENTER', x = 77, y = -90 }
@@ -88,6 +90,54 @@ def check_persistence(LuaRuntime, saved_file=None):
         db.ui.window = { point = 'CENTER', relativePoint = 'CENTER', x = 80, y = 90 }
         db.layouts.saved = { snapGap = 7, windows = { { x = 1, y = 2 } } }
     ''')
+    # Click real macro page controls, then reload their serialized settings in fresh VMs.
+    controls_lua = LuaRuntime(unpack_returned_tuples=True)
+    controls_lua.execute((root / 'Tests/ui_localization.lua').read_text(encoding='utf-8'))
+    controls_ns = controls_lua.table()
+    for file in ['Core.lua', 'Modules/ConsumableMacros.lua', 'UI/Theme.lua', 'UI/Controls.lua', 'UI/Macros.lua']:
+        controls_lua.execute((root / file).read_text(encoding='utf-8'), 'ZoidsTools_F', controls_ns)
+    controls_lua.globals().ns = controls_ns
+    controls_lua.execute("""
+        InitializeTestSettings()
+        local create = CreateFrame
+        macroChecks = {}
+        function CreateFrame(kind, ...)
+            local widget = create(kind, ...)
+            if kind == 'CheckButton' then macroChecks[#macroChecks+1] = widget end
+            return widget
+        end
+        local page = ns.UI.CreateMacrosPage(UIParent)
+        -- The native check state may be numeric on older clients.
+        for _,index in ipairs({1,3}) do
+            local check = macroChecks[index]
+            check.GetChecked = function() return 1 end
+            check.scripts.OnClick(check)
+        end
+        assert(ns.db.macros.healthEnabled and ns.db.macros.manaEnabled,
+            'Checked macro controls must save true, including numeric native checked states')
+        assert(ns.db == ZoidsTools_FDB)
+    """)
+    macro_saved = snapshot(controls_lua)
+    for _ in range(3):
+        reloaded = start(macro_saved)
+        reloaded.execute('assert(ns.db.macros.healthEnabled and ns.db.macros.manaEnabled)')
+        assert snapshot(reloaded) == macro_saved
+    controls_lua.execute("""
+        for _,value in ipairs({0,false}) do
+            macroChecks[1].GetChecked = function() return value end
+            macroChecks[1].scripts.OnClick(macroChecks[1])
+            assert(ns.db.macros.healthEnabled == false)
+        end
+        macroChecks[3].GetChecked = function() return nil end
+        macroChecks[3].scripts.OnClick(macroChecks[3])
+        assert(ns.db.macros.manaEnabled == false)
+        macroChecks[1].GetChecked = function() return true end
+        macroChecks[1].scripts.OnClick(macroChecks[1])
+        assert(ns.db.macros.healthEnabled == true)
+    """)
+    disabled_reload = start(snapshot(controls_lua))
+    disabled_reload.execute('assert(ns.db.macros.healthEnabled and ns.db.macros.manaEnabled == false)')
+    print('PASS: real macro checkboxes persist numeric/boolean checked states across three fresh reloads; intentional disable persists')
     expected = snapshot(lua)
     for _ in range(3):
         lua = start(expected)
@@ -188,6 +238,62 @@ def check_persistence(LuaRuntime, saved_file=None):
         frames[1].handler(nil, 'PLAYER_LOGOUT')
         assert(ZoidsTools_FRecoveryDB.stats.x == 123)
     ''')
+    # A nonempty stale main save must not replace a newer explicit macro choice.
+    macro_recovery = start('ZoidsTools_FDB={stats={x=42}}', bundled=True)
+    macro_recovery.execute('ZoidsTools_FRecoveryService:Start(ns.db)')
+    macro_ns = macro_recovery.globals().ns
+    macro_recovery.execute((root / 'Modules/ConsumableMacros.lua').read_text(encoding='utf-8'), 'ZoidsTools_F', macro_ns)
+    macro_recovery.execute("""
+        -- No bag/macro APIs needed to exercise persistence of explicit choices.
+        C_Timer.After = function() end
+        ns:SetConsumableMacroOption('healthEnabled', true)
+        ns:SetConsumableMacroOption('manaEnabled', true)
+        assert(ZoidsTools_FRecoveryDB.macros.healthEnabled and ZoidsTools_FRecoveryDB.macros.manaEnabled)
+        assert(ZoidsTools_FRecoveryDB.macros.revision == 2)
+    """)
+    macro_backup = snapshot(macro_recovery, 'ZoidsTools_FRecoveryDB')
+    stale = start('ZoidsTools_FDB={macros={healthEnabled=false,manaEnabled=false},stats={x=123}}', macro_backup, bundled=True)
+    stale.execute("""
+        assert(ns.macroSettingsRecoveryUsed and ns.db.macros.healthEnabled and ns.db.macros.manaEnabled)
+        assert(ns.db.stats.x == 123) -- Recover only macros, not unrelated valid settings.
+        ZoidsTools_FRecoveryService:Start(ns.db)
+        assert(ZoidsTools_FRecoveryDB.macros.healthEnabled)
+    """)
+    macro_recovery.execute("""
+        ns:SetConsumableMacroOption('healthEnabled', false)
+        ns:SetConsumableMacroOption('manaEnabled', false)
+        assert(ZoidsTools_FRecoveryDB.macros.revision == 4)
+    """)
+    disabled_backup = snapshot(macro_recovery, 'ZoidsTools_FRecoveryDB')
+    off = start('ZoidsTools_FDB={macros={healthEnabled=true,manaEnabled=true,revision=2}}', disabled_backup, bundled=True)
+    off.execute('assert(ns.db.macros.healthEnabled == false and ns.db.macros.manaEnabled == false)')
+    newer_main = start('ZoidsTools_FDB={macros={healthEnabled=false,manaEnabled=false,revision=5}}', macro_backup, bundled=True)
+    newer_main.execute('assert(not ns.macroSettingsRecoveryUsed and ns.db.macros.revision==5 and ns.db.macros.healthEnabled==false)')
+    pinned = 'ZoidsTools_FRecovery={macros={healthEnabled=true,manaEnabled=true,healthCombatItems=true,manaCombatPotion=true,revision=1}}'
+    reset = start('ZoidsTools_FDB={macros={healthEnabled=false,manaEnabled=false},stats={x=77}}',
+                  'ZoidsTools_FRecoveryDB={macros={healthEnabled=false,manaEnabled=false}}\n'+pinned, bundled=True)
+    reset.execute('assert(ns.db.macros.healthEnabled and ns.db.macros.manaEnabled and ns.db.stats.x==77)')
+    intentional_off = start('ZoidsTools_FDB={macros={healthEnabled=false,manaEnabled=false,revision=2}}', pinned, bundled=True)
+    intentional_off.execute('assert(not ns.db.macros.healthEnabled and not ns.db.macros.manaEnabled)')
+    tracker = start(bundled=True)
+    tracker.execute('ZoidsTools_FRecoveryService:Start(ns.db)')
+    tracker.execute((root / 'Completionist/Bootstrap.lua').read_text(), 'ZoidsTools_F', tracker.globals().ns)
+    tracker.execute('''
+        ns.Completionist.char={locked=true,minimized=true,windowPoint={point="TOPLEFT",relative="BOTTOMLEFT",x=0,y=1200}}
+        ns.Completionist.SaveTrackerSettings()
+        assert(ZoidsTools_FRecoveryDB.completionistTracker.locked)
+        assert(ZoidsTools_FRecoveryDB.completionistTracker.windowPoint.y==1200)
+        ns.Completionist.char.windowPoint.y=999
+        assert(ZoidsTools_FRecoveryDB.completionistTracker.windowPoint.y==1200)
+    ''')
+    tracker_backup = snapshot(tracker, 'ZoidsTools_FRecoveryDB')
+    for main in ['', 'ZoidsTools_FDB={stats={x=42}}', 'ZoidsTools_FDB={completionistTracker={locked=false,revision=0}}']:
+        recovered_tracker = start(main, tracker_backup, bundled=True)
+        recovered_tracker.execute('assert(ns.db.completionistTracker.locked and ns.db.completionistTracker.windowPoint.y==1200)')
+    newer_tracker = start('ZoidsTools_FDB={completionistTracker={locked=false,revision=10}}', tracker_backup, bundled=True)
+    newer_tracker.execute('assert(not ns.db.completionistTracker.locked and ns.db.completionistTracker.revision==10)')
+    print('PASS: shared tracker immediate recovery snapshot; missing/stale main recovery; newer unlock preserved')
+    print('PASS: immediate macro recovery snapshot, newer backup overrides stale nonempty main settings, explicit disable and newer main win')
     print('PASS: bundled recovery, 600-second snapshots, deep copies, logout, reload restoration, and disabled companion fallback')
     print('PASS: missing-save recovery, repeated reloads, independent snapshot, and normal saved-settings priority')
     if saved_file:

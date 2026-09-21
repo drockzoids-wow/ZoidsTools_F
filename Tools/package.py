@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ADDON = 'ZoidsTools_F'
 
 
-def build(output=None, tag=None):
+def build(output=None, tag=None, validate_only=False):
     toc_path = ROOT / f'{ADDON}.toc'
     toc = toc_path.read_text(encoding='utf-8-sig')
     version = re.search(r'^## Version:\s*(\S+)\s*$', toc, re.MULTILINE).group(1)
@@ -19,7 +19,7 @@ def build(output=None, tag=None):
     core = (ROOT / 'Core.lua').read_text(encoding='utf-8-sig')
     if f'ns.version = "{version}"' not in core:
         raise ValueError('Core.lua and TOC versions must match')
-    files = {toc_path, ROOT / 'LICENSE', ROOT / 'README.md', ROOT / 'CHANGELOG.md'}
+    files = {toc_path, ROOT / 'LICENSE', ROOT / 'README.md', ROOT / 'CHANGELOG.md', ROOT / 'Locales' / 'README.md'}
     for line in toc.splitlines():
         line = line.strip()
         if line and not line.startswith('#'):
@@ -28,6 +28,7 @@ def build(output=None, tag=None):
                 raise ValueError(f'TOC path escapes addon folder: {line}')
             files.add(path)
     files.update(p for p in (ROOT / 'Media').rglob('*') if p.is_file())
+    files.add(ROOT / 'Save-BetaPreset.ps1')
     for path in files:
         if not path.is_file():
             raise FileNotFoundError(path)
@@ -48,6 +49,8 @@ def build(output=None, tag=None):
     for path in recovery_files:
         if not path.is_file():
             raise FileNotFoundError(path)
+    if validate_only:
+        return f'Validated {ADDON} v{version} ({len(files) + len(recovery_files)} files); no archive created'
     destination = Path(output) if output else ROOT / 'dist' / f'{ADDON}-{version}.zip'
     destination.parent.mkdir(parents=True, exist_ok=True)
     with ZipFile(destination, 'w', compression=ZIP_DEFLATED) as archive:
@@ -62,5 +65,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--tag', help='Validate a release tag, e.g. v0.2.0-beta')
     parser.add_argument('--output', type=Path)
+    parser.add_argument('--validate-only', action='store_true', help='Check versions and manifest without creating a ZIP')
     args = parser.parse_args()
-    print(build(args.output, args.tag))
+    print(build(args.output, args.tag, args.validate_only))

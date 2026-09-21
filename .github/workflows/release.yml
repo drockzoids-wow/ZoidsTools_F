@@ -25,6 +25,7 @@ jobs:
       - name: Test before release
         run: |
           python Tests/smoke.py
+          python Tests/completionist.py
           python Tests/package_test.py
           python Tests/curseforge_test.py
       - name: Package matching version

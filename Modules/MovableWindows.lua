@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
 
 local movableFrames = {}
 local windowHandles = {}
@@ -11,6 +12,7 @@ local bagRefreshQueued = false
 local worldMapMoverInstalled = false
 local worldMapMoving = false
 local RestoreOriginalPoint
+local RefreshBagsSoon
 
 local blockedFrames = {
     AlertFrame = true,
@@ -126,6 +128,13 @@ local function SafeCall(method, frame, ...)
     end
 
     return pcall(method, frame, ...)
+end
+
+local function CombatBlocksMovement(frame, isBagWindow)
+    if not InCombatLockdown() then return false end
+    if not isBagWindow or not frame or type(frame.IsProtected) ~= "function" then return true end
+    local ok, protected = pcall(frame.IsProtected, frame)
+    return not ok or protected ~= false
 end
 
 local function SetManagedPlacement(frame, value)
@@ -333,14 +342,122 @@ local function CaptureOriginalPoints(frame, isBagWindow)
     end
 end
 
+local function UsesProfessionBagAnchor(frame)
+    local name = GetFrameName(frame)
+    if not name or not name:match("^ContainerFrame%d+$") or not frame.GetID then return false end
+    local ok, bagID = pcall(frame.GetID, frame)
+    if not ok or type(bagID) ~= "number" or bagID <= 0 then return false end
+    local api = C_Container or {}
+    local inventoryID = api.ContainerIDToInventoryID or ContainerIDToInventoryID
+    if type(inventoryID) == "function" and type(IsInventoryItemProfessionBag) == "function" then
+        local mapped, slot = pcall(inventoryID, bagID)
+        if mapped and slot then
+            local checked, profession = pcall(IsInventoryItemProfessionBag, "player", slot)
+            if checked then return profession == true or profession == 1 end
+        end
+    end
+    -- Older clients expose specialty bag families instead of the inventory query.
+    local freeSlots = api.GetContainerNumFreeSlots or GetContainerNumFreeSlots
+    if bagID <= (NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS or 4) and type(freeSlots) == "function" then
+        local read, _, family = pcall(freeSlots, bagID)
+        return read and type(family) == "number" and family > 0
+    end
+    return false
+end
+
+local bagCorners = { BOTTOMRIGHT=true, BOTTOMLEFT=true, TOPRIGHT=true, TOPLEFT=true }
+local bagLayoutInProgress = false
+local function CarriedBag(frame)
+    local name = GetFrameName(frame)
+    if name == "ContainerFrameCombinedBags" then return true end
+    if not name or not name:match("^ContainerFrame%d+$") or not frame.GetID then return false end
+    local ok, id = pcall(frame.GetID, frame)
+    return ok and type(id)=="number" and id>=0 and id<=(NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS or 4)
+end
+local function BagBase()
+    local fallback
+    for _,name in ipairs(knownBagFrames) do
+        local bag = _G[name]
+        if bag and CarriedBag(bag) and bag:IsShown() then
+            fallback = fallback or bag
+            local _,relative = bag:GetPoint(1)
+            if not (relative and relative ~= bag and CarriedBag(relative) and relative:IsShown()) then return bag end
+        end
+    end
+    return fallback
+end
+local function BagScale(frame)
+    local parentScale = UIParent.GetEffectiveScale and UIParent:GetEffectiveScale() or 1
+    local scale = frame.GetEffectiveScale and frame:GetEffectiveScale() or (frame.GetScale and frame:GetScale()) or 1
+    return scale / parentScale
+end
+local function CaptureBagAnchor(frame, corner)
+    if not frame or CombatBlocksMovement(frame,true) then return false end
+    local xMethod = corner:find("RIGHT",1,true) and frame.GetRight or frame.GetLeft
+    local yMethod = corner:find("TOP",1,true) and frame.GetTop or frame.GetBottom
+    if not xMethod or not yMethod then return false end
+    local okX,x = pcall(xMethod,frame)
+    local okY,y = pcall(yMethod,frame)
+    if not okX or not okY or type(x)~="number" or type(y)~="number" then return false end
+    local scale = BagScale(frame)
+    ns.db.windows.bagAnchor = {point=corner,x=x*scale,y=y*scale}
+    if ZoidsTools_FRecoveryService then ZoidsTools_FRecoveryService:Capture() end
+    return true
+end
+function ns:GetBagAnchorCorner()
+    local corner = self.db and self.db.windows.bagAnchorCorner
+    return bagCorners[corner] and corner or "BOTTOMRIGHT"
+end
+function ns:SetBagAnchorCorner(corner)
+    if not bagCorners[corner] or InCombatLockdown() then return end
+    local base = BagBase()
+    -- Require a visible bag when changing an existing anchor so it does not jump.
+    if self.db.windows.bagAnchor and not CaptureBagAnchor(base,corner) then
+        self:Print("Open a bag before changing its anchor corner.")
+        return
+    end
+    self.db.windows.bagAnchorCorner = corner
+    if base and self.db.windows.savePositions then CaptureBagAnchor(base,corner) end
+    if ZoidsTools_FRecoveryService then ZoidsTools_FRecoveryService:Capture() end
+    if RefreshBagsSoon then RefreshBagsSoon() end
+end
+
+local function GetSavedPoint(frame, isBagWindow)
+    local points = ns.db and ns.db.windows and ns.db.windows.points
+    if not points then return end
+    local anchor = ns.db.windows.bagAnchor
+    if isBagWindow and CarriedBag(frame) and anchor then
+        if bagLayoutInProgress or not frame:IsShown() or BagBase() ~= frame then return end
+        local scale = BagScale(frame)
+        return {point=anchor.point,relativeTo="UIParent",relativePoint="BOTTOMLEFT",x=anchor.x/scale,y=anchor.y/scale}
+    end
+    local combined = _G.ContainerFrameCombinedBags
+    if isBagWindow and combined and points.ContainerFrameCombinedBags and UsesProfessionBagAnchor(frame) then
+        -- When both are open, leave the side-by-side arrangement to Blizzard.
+        if combined:IsShown() then return end
+        return points.ContainerFrameCombinedBags
+    end
+    return points[GetFrameName(frame)]
+end
+
 local function SavePoint(frame, isBagWindow)
-    if not ns.db or not ns.db.windows.savePositions or InCombatLockdown() then
+    if not ns.db or not ns.db.windows.savePositions or CombatBlocksMovement(frame, isBagWindow) then
         return
     end
 
     local name = GetFrameName(frame)
     if not name then
         return
+    end
+
+    if isBagWindow and CarriedBag(frame) and CaptureBagAnchor(frame,ns:GetBagAnchorCorner()) then
+        if RefreshBagsSoon then RefreshBagsSoon() end
+        return
+    end
+
+    if isBagWindow and UsesProfessionBagAnchor(frame) and _G.ContainerFrameCombinedBags
+        and ns.db.windows.points.ContainerFrameCombinedBags then
+        return -- Never persist the temporary shared anchor as a profession bag position.
     end
 
     if IsBlockedFrameName(name, isBagWindow) then
@@ -374,7 +491,7 @@ local function HasSavedPoint(frame, isBagWindow)
         and ns.db.windows.savePositions
         and ns.db.windows.points
         and name
-        and ns.db.windows.points[name] ~= nil
+        and GetSavedPoint(frame, isBagWindow) ~= nil
 end
 
 local function ClampScale(value)
@@ -548,7 +665,7 @@ local function ResetFrameScale(frame, notify, isBagWindow)
     frame.ZTApplyingScale = nil
 
     if didReset and notify then
-        ns:Print(name .. " scale reset.")
+        ns:Print(string.format(L["%s scale reset."], name))
     end
 end
 
@@ -584,6 +701,26 @@ local function RelayoutContainerFrames()
             pcall(_G[functionName])
         end
     end
+end
+
+local function RefreshProfessionBagLayout(frame)
+    if ns.db and ns.db.windows.bagAnchor and CarriedBag(frame) then
+        RefreshBagsSoon()
+        return
+    end
+    if GetFrameName(frame) ~= "ContainerFrameCombinedBags" or not ns.db
+        or not ns.db.windows.enabled or not ns.db.windows.moveBags
+        or not ns.db.windows.savePositions or not ns.db.windows.points.ContainerFrameCombinedBags then return end
+    if frame:IsShown() then
+        for bag in pairs(bagFrames) do
+            if UsesProfessionBagAnchor(bag) and not CombatBlocksMovement(bag, true) and not bag.ZTMoving then
+                -- Release the solo override before Blizzard lays out adjacent bags.
+                SetManagedPlacement(bag, false)
+            end
+        end
+    end
+    RelayoutContainerFrames()
+    RefreshBagsSoon()
 end
 
 local function RelayoutUIPanelFrames(frame)
@@ -692,6 +829,7 @@ local function ResetFramePosition(frame, notify, useOriginalPoint)
         ns.db.windows.points[name] = nil
     end
 
+    if isBagWindow and CarriedBag(frame) then ns.db.windows.bagAnchor = nil end
     if useOriginalPoint == "bag" and not InCombatLockdown() then
         SetManagedPlacement(frame, false)
         RelayoutContainerFrames()
@@ -713,7 +851,7 @@ local function ResetFramePosition(frame, notify, useOriginalPoint)
     end
 
     if notify then
-        ns:Print(name .. " position reset.")
+        ns:Print(string.format(L["%s position reset."], name))
     end
 end
 
@@ -756,19 +894,23 @@ local function RestoreSavedPoint(frame, isBagWindow)
         or not ns.db.windows.savePositions
         or (isBagWindow and not ns.db.windows.moveBags)
         or IsBlockedFrame(frame, isBagWindow)
-        or InCombatLockdown()
+        or CombatBlocksMovement(frame, isBagWindow)
+        or frame.ZTMoving
     then
         return
     end
 
     local name = GetFrameName(frame)
-    local saved = name and ns.db.windows.points[name]
+    local saved = name and GetSavedPoint(frame, isBagWindow)
 
     if not saved then
         return
     end
 
     local relativeTo = _G[saved.relativeTo] or UIParent
+    -- UIParent is the normal screen anchor, not the frame we are moving.
+    -- Its protection state must not block an otherwise movable bag's restore.
+    if relativeTo ~= UIParent and InCombatLockdown() and CombatBlocksMovement(relativeTo, true) then return end
 
     if frame.GetNumPoints and frame.GetPoint and frame:GetNumPoints() == 1 then
         local point, currentRelativeTo, relativePoint, x, y = frame:GetPoint(1)
@@ -906,7 +1048,7 @@ local function CreateWindowHandle(frame)
 
     handle.label = handle:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     handle.label:SetPoint("CENTER")
-    handle.label:SetText("Move")
+    handle.label:SetText(L["Move"])
     handle.label:SetAlpha(0.45)
 
     handle:SetScript("OnDragStart", function()
@@ -932,10 +1074,10 @@ local function CreateWindowHandle(frame)
         self.label:SetAlpha(0.7)
 
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:SetText("Move Window")
-        GameTooltip:AddLine("Drag this handle to reposition the window.", 1, 1, 1, true)
-        GameTooltip:AddLine("Ctrl + Mouse Wheel: Scale this window", 0.8, 0.8, 0.8, true)
-        GameTooltip:AddLine("Ctrl + Right-click: Reset this position", 0.8, 0.8, 0.8, true)
+        GameTooltip:SetText(L["Move Window"])
+        GameTooltip:AddLine(L["Drag this handle to reposition the window."], 1, 1, 1, true)
+        GameTooltip:AddLine(L["Ctrl + Mouse Wheel: Scale this window"], 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(L["Ctrl + Right-click: Reset this position"], 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
 
@@ -956,7 +1098,7 @@ end
 local function UpdateBagHandle(frame)
     local handle = bagHandles[frame]
 
-    if not handle then
+    if not handle or CombatBlocksMovement(frame, true) then
         return
     end
 
@@ -1034,6 +1176,7 @@ local function MakeMovable(frame)
 end
 
 local function PositionBagHandle(frame, handle)
+    if CombatBlocksMovement(frame, true) then return end
     local name = frame:GetName()
     local leftOffset = name == "ContainerFrameCombinedBags" and 22 or 8
     local rightOffset = name == "ContainerFrameCombinedBags" and -92 or -34
@@ -1064,11 +1207,11 @@ local function CreateBagHandle(frame)
 
     handle.label = handle:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     handle.label:SetPoint("CENTER")
-    handle.label:SetText("Move")
+    handle.label:SetText(L["Move"])
     handle.label:SetAlpha(0.65)
 
     handle:SetScript("OnDragStart", function()
-        if ns.db and ns.db.windows.enabled and ns.db.windows.moveBags and not InCombatLockdown() then
+        if ns.db and ns.db.windows.enabled and ns.db.windows.moveBags and not CombatBlocksMovement(frame, true) then
             frame.ZTMoving = true
             if not SafeCall(frame.StartMoving, frame) then
                 frame.ZTMoving = nil
@@ -1077,6 +1220,7 @@ local function CreateBagHandle(frame)
     end)
 
     handle:SetScript("OnDragStop", function()
+        if not frame.ZTMoving or CombatBlocksMovement(frame, true) then return end
         SafeCall(frame.StopMovingOrSizing, frame)
         frame.ZTMoving = nil
         SetManagedPlacement(frame, true)
@@ -1089,10 +1233,10 @@ local function CreateBagHandle(frame)
         self:SetBackdropBorderColor(1, 0.82, 0, 0.55)
 
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:SetText("Move Bag Window")
-        GameTooltip:AddLine("Drag this handle to reposition the bag.", 1, 1, 1, true)
-        GameTooltip:AddLine("Ctrl + Mouse Wheel: Scale this bag", 0.8, 0.8, 0.8, true)
-        GameTooltip:AddLine("Ctrl + Right-click: Reset this position", 0.8, 0.8, 0.8, true)
+        GameTooltip:SetText(L["Move Bag Window"])
+        GameTooltip:AddLine(L["Drag this handle to reposition the bag."], 1, 1, 1, true)
+        GameTooltip:AddLine(L["Ctrl + Mouse Wheel: Scale this bag"], 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(L["Ctrl + Right-click: Reset this position"], 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
 
@@ -1110,7 +1254,7 @@ local function CreateBagHandle(frame)
 end
 
 local function MakeBagMovable(frame)
-    if not frame or not ns.db then
+    if not frame or not ns.db or CombatBlocksMovement(frame, true) then
         return
     end
 
@@ -1145,6 +1289,8 @@ local function MakeBagMovable(frame)
         bagHandles[frame] = handle
 
         frame:HookScript("OnShow", function(self)
+            if CombatBlocksMovement(self, true) then return end
+            RefreshProfessionBagLayout(self)
             CaptureOriginalPoints(self, true)
             ApplySavedScaleSoon(self, true)
             RestoreSavedPointSoon(self, true)
@@ -1153,6 +1299,13 @@ local function MakeBagMovable(frame)
         end)
 
         frame:HookScript("OnHide", function(self)
+            if CombatBlocksMovement(self, true) then return end
+            RefreshProfessionBagLayout(self)
+            if self.ZTMoving then
+                SafeCall(self.StopMovingOrSizing, self)
+                self.ZTMoving = nil
+                SavePoint(self, true)
+            end
             ApplySavedScaleSoon(self, true)
 
             if ns.db and not ns.db.windows.savePositions then
@@ -1165,12 +1318,18 @@ local function MakeBagMovable(frame)
         end)
 
         frame:HookScript("OnSizeChanged", function(self)
+            if ns.db.windows.bagAnchor then RefreshBagsSoon() end
             PositionBagHandle(self, bagHandles[self])
             UpdateBagHandle(self)
         end)
     end
 
     RestoreSavedPointSoon(frame, true)
+    if not ns.db.windows.bagAnchor and ns.db.windows.enabled and ns.db.windows.savePositions
+        and CarriedBag(frame) and frame:IsShown() and ns.db.windows.points[name]
+        and (name=="ContainerFrameCombinedBags" or frame:GetID()==0) then
+        CaptureBagAnchor(frame,ns:GetBagAnchorCorner())
+    end
     PositionBagHandle(frame, bagHandles[frame])
     UpdateBagHandle(frame)
 end
@@ -1216,14 +1375,20 @@ local function RefreshPanelWindowsSoon()
 end
 
 local function RegisterBagWindows()
-    if InCombatLockdown() then
-        return
-    end
-
     if not ns.db or not ns.db.windows.moveBags then
         return
     end
 
+    for bag in pairs(bagFrames) do if bag.ZTMoving then return end end
+    if ns.db.windows.enabled and ns.db.windows.savePositions and ns.db.windows.bagAnchor and not InCombatLockdown() then
+        bagLayoutInProgress = true
+        for _, name in ipairs(knownBagFrames) do
+            local bag = _G[name]
+            if bag and CarriedBag(bag) and not bag.ZTMoving then SetManagedPlacement(bag,false) end
+        end
+        RelayoutContainerFrames()
+        bagLayoutInProgress = false
+    end
     for _, name in ipairs(knownBagFrames) do
         if _G[name] then
             MakeBagMovable(_G[name])
@@ -1231,8 +1396,8 @@ local function RegisterBagWindows()
     end
 end
 
-local function RefreshBagsSoon()
-    if bagRefreshQueued or InCombatLockdown() then
+RefreshBagsSoon = function()
+    if bagRefreshQueued or bagLayoutInProgress then
         return
     end
 
@@ -1258,17 +1423,6 @@ local function RegisterBagWatcherWorkEvents()
     ns:RegisterCompatibleEvent(bagWatcher, "BAG_CLOSED")
     ns:RegisterCompatibleEvent(bagWatcher, "BAG_UPDATE_DELAYED")
     ns:RegisterCompatibleEvent(bagWatcher, "PLAYERBANKSLOTS_CHANGED")
-end
-
-local function UnregisterBagWatcherWorkEvents()
-    if not bagWatcher or type(bagWatcher.UnregisterEvent) ~= "function" then
-        return
-    end
-
-    pcall(bagWatcher.UnregisterEvent, bagWatcher, "BAG_OPEN")
-    pcall(bagWatcher.UnregisterEvent, bagWatcher, "BAG_CLOSED")
-    pcall(bagWatcher.UnregisterEvent, bagWatcher, "BAG_UPDATE_DELAYED")
-    pcall(bagWatcher.UnregisterEvent, bagWatcher, "PLAYERBANKSLOTS_CHANGED")
 end
 
 local function RefreshFrameSoon(frame, isBagWindow)
@@ -1351,11 +1505,6 @@ local function InstallHooks()
     bagWatcher:RegisterEvent("PLAYER_REGEN_ENABLED")
     bagWatcher:SetScript("OnEvent", function(_, event)
         if event == "PLAYER_REGEN_DISABLED" then
-            UnregisterBagWatcherWorkEvents()
-            return
-        end
-
-        if InCombatLockdown() and event ~= "PLAYER_REGEN_ENABLED" then
             return
         end
 
@@ -1405,7 +1554,6 @@ function ns:RefreshMovableWindows()
 end
 
 function ns:RefreshBagMovement()
-    if InCombatLockdown() then return end
     RegisterBagWindows()
 
     for frame in pairs(bagFrames) do
@@ -1415,13 +1563,14 @@ end
 
 function ns:ResetMovableWindowPositions()
     if InCombatLockdown() then
-        self:Print("Window positions can be reset after combat.")
+        self:Print(L["Window positions can be reset after combat."])
         return false
     end
     if not self.db then
         return
     end
 
+    self.db.windows.bagAnchor = nil
     wipe(self.db.windows.points)
 
     for frame in pairs(movableFrames) do
@@ -1436,12 +1585,12 @@ function ns:ResetMovableWindowPositions()
 
     ResetWorldMapPosition()
 
-    self:Print("Saved window positions reset.")
+    self:Print(L["Saved window positions reset."])
 end
 
 function ns:ResetMovableWindowScales()
     if InCombatLockdown() then
-        self:Print("Window scales can be reset after combat.")
+        self:Print(L["Window scales can be reset after combat."])
         return false
     end
     if not self.db then
@@ -1461,7 +1610,7 @@ function ns:ResetMovableWindowScales()
         UpdateBagHandle(frame)
     end
 
-    self:Print("Saved window scales reset.")
+    self:Print(L["Saved window scales reset."])
 end
 
 function ns:GetSavedWindowScaleCount()

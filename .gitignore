@@ -1,6 +1,7 @@
 # Generated packages and local test environments
 dist/
 build/
+.git-restored/
 .venv/
 venv/
 __pycache__/

@@ -22,14 +22,9 @@ jobs:
         run: python -m pip install -r Tests/requirements.txt
       - name: Check Lua and behavior
         run: python Tests/smoke.py
-      - name: Test addon packaging
-        run: python Tests/package_test.py
+      - name: Check Completionist and migration
+        run: python Tests/completionist.py
+      - name: Validate addon packaging without an archive
+        run: python Tools/package.py --validate-only
       - name: Test CurseForge destination checks
         run: python Tests/curseforge_test.py
-      - name: Build installable addon
-        run: python Tools/package.py
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ZoidsTools_F-addon
-          path: dist/*.zip
-          if-no-files-found: error

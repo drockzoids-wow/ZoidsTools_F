@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
 local window
 local rows = {}
 local values = {}
@@ -27,21 +28,21 @@ local function ShowTooltip(row)
     if not GameTooltip or dragging then return end
     GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
     if row.key == "fps" then
-        GameTooltip:SetText("Frames per second")
-        GameTooltip:AddLine("Current: " .. Format(values.fps, " FPS"), 1, 1, 1)
-        GameTooltip:AddLine("Higher values generally mean smoother motion.", 0.8, 0.8, 0.8, true)
+        GameTooltip:SetText(L["Frames per second"])
+        GameTooltip:AddLine(L["Current: "] .. Format(values.fps, " FPS"), 1, 1, 1)
+        GameTooltip:AddLine(L["Higher values generally mean smoother motion."], 0.8, 0.8, 0.8, true)
     elseif row.key == "latency" then
-        GameTooltip:SetText("Latency")
-        GameTooltip:AddDoubleLine("Home", Format(values.home, " ms"), 1, 1, 1, 1, 1, 1)
-        GameTooltip:AddDoubleLine("World", Format(values.world, " ms"), 1, 1, 1, 1, 1, 1)
-        GameTooltip:AddLine("The box shows world latency. Lower latency means a faster server response.", 0.8, 0.8, 0.8, true)
+        GameTooltip:SetText(L["Latency"])
+        GameTooltip:AddDoubleLine(L["Home"], Format(values.home, " ms"), 1, 1, 1, 1, 1, 1)
+        GameTooltip:AddDoubleLine(L["World"], Format(values.world, " ms"), 1, 1, 1, 1, 1, 1)
+        GameTooltip:AddLine(L["The box shows world latency. Lower latency means a faster server response."], 0.8, 0.8, 0.8, true)
     else
-        GameTooltip:SetText("Movement speed")
-        GameTooltip:AddLine("Current: " .. Format(values.speed, "%"), 1, 1, 1)
-        GameTooltip:AddLine("100% = normal running speed (7 yards/second). Standing still shows 0%. Includes movement while mounted, swimming, or flying when reported by the client.", 0.8, 0.8, 0.8, true)
+        GameTooltip:SetText(L["Movement speed"])
+        GameTooltip:AddLine(L["Current: "] .. Format(values.speed, "%"), 1, 1, 1)
+        GameTooltip:AddLine(L["100% = normal running speed (7 yards/second). Standing still shows 0%. Includes movement while mounted, swimming, or flying when reported by the client."], 0.8, 0.8, 0.8, true)
     end
-    GameTooltip:AddLine("Unavailable or restricted values display --.", 0.6, 0.6, 0.6, true)
-    GameTooltip:AddLine(ns.db.stats.locked and "Position locked. Unlock in /ztf stats." or "Drag to move. Lock in /ztf stats.", 0.96, 0.72, 0.20, true)
+    GameTooltip:AddLine(L["Unavailable or restricted values display --."], 0.6, 0.6, 0.6, true)
+    GameTooltip:AddLine(ns.db.stats.locked and L["Position locked. Unlock in /ztf stats."] or L["Drag to move. Lock in /ztf stats."], 0.96, 0.72, 0.20, true)
     GameTooltip:Show()
 end
 
@@ -124,7 +125,7 @@ function ns:InitializeStatsWindow()
     ns.UI.Theme.ApplyPanelBackdrop(window)
     local title = window:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     title:SetPoint("TOP", 0, -8)
-    title:SetText("STATS")
+    title:SetText(L["STATS"])
     title:SetTextColor(unpack(ns.UI.Theme.colors.gold))
     window:RegisterForDrag("LeftButton")
     window:SetScript("OnDragStart", StartMoving)
@@ -133,7 +134,8 @@ function ns:InitializeStatsWindow()
         StopMoving()
         for _, row in ipairs(rows) do HideTooltip(row) end
     end)
-    for i, entry in ipairs({ { "fps", "FPS" }, { "latency", "Latency (ms)" }, { "speed", "Speed (%)" } }) do
+    local width = 120
+    for i, entry in ipairs({ { "fps", L["FPS"] }, { "latency", L["Latency (ms)"] }, { "speed", L["Speed (%)"] } }) do
         local row = CreateFrame("Frame", nil, window)
         row.key = entry[1]
         row:SetPoint("TOPLEFT", 8, -22 - (i - 1) * 20)
@@ -141,6 +143,7 @@ function ns:InitializeStatsWindow()
         local label = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
         label:SetPoint("LEFT", 2, 0)
         label:SetText(entry[2])
+        if label.GetStringWidth then width = math.max(width, math.ceil(label:GetStringWidth()) + 74) end
         row.value = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
         row.value:SetPoint("RIGHT", -2, 0)
         row.value:SetTextColor(unpack(ns.UI.Theme.colors.gold))
@@ -151,6 +154,8 @@ function ns:InitializeStatsWindow()
         row:SetScript("OnLeave", HideTooltip)
         rows[i] = row
     end
+    window:SetSize(width, 90)
+    for _, row in ipairs(rows) do row:SetSize(width - 16, 20) end
     local elapsedTime = 0
     window:SetScript("OnUpdate", function(_, elapsed)
         elapsedTime = elapsedTime + elapsed

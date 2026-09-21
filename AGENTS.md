@@ -1,5 +1,10 @@
 # ZoidsTools Forever project instructions
 
+## Local installation workflow
+
+- This repository is junctioned into the user's WoW addons folder. Make updates directly in this repository; no separate install or copy step is needed.
+- Do not create addon ZIP files unless the user explicitly requests one. Routine validation should avoid generating ZIPs, including through packaging tests; validate version/tag compatibility without creating an archive.
+
 ## Version management
 
 - The user wants Codex to manage release versions automatically, without reminders.

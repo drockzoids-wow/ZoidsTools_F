@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
 local paths = {
     player = { "PlayerCastingBarFrame", "CastingBarFrame" },
     target = { "TargetFrameSpellBar", "TargetFrame.spellbar", "TargetFrame.SpellBar" },
@@ -198,22 +199,22 @@ function ns:StopCastbarPreview()
 end
 
 function ns:StartCastbarPreview(key)
-    if not paths[key] then return false, "Unknown castbar." end
-    if InCombat() then return false, "Preview is available outside combat." end
-    if FullEditMode() then return false, "Close Blizzard Edit Mode first." end
-    if not self:StopCastbarPreview() then return false, "The previous preview is waiting for access to its frame." end
+    if not paths[key] then return false, L["Unknown castbar."] end
+    if InCombat() then return false, L["Preview is available outside combat."] end
+    if FullEditMode() then return false, L["Close Blizzard Edit Mode first."] end
+    if not self:StopCastbarPreview() then return false, L["The previous preview is waiting for access to its frame."] end
     local bar = Resolve(key)
     if not Accessible(bar) or type(bar.UpdateShownState) ~= "function" then
-        return false, "This castbar does not expose Blizzard's Edit Mode preview on this client."
+        return false, L["This castbar does not expose Blizzard's Edit Mode preview on this client."]
     end
-    if Secret(bar.isInEditMode) or bar.isInEditMode then return false, "This castbar is already being edited." end
+    if Secret(bar.isInEditMode) or bar.isInEditMode then return false, L["This castbar is already being edited."] end
     if (bar.GetParent and bar:GetParent() and not bar:GetParent():IsShown()) then
-        return false, "Show the target or focus frame before previewing its castbar."
+        return false, L["Show the target or focus frame before previewing its castbar."]
     end
     for _, api in ipairs({ "UnitCastingInfo", "UnitChannelInfo" }) do
         if type(_G[api]) == "function" then
             local name = _G[api](key)
-            if Secret(name) or name then return false, "Wait for the current cast or channel to finish." end
+            if Secret(name) or name then return false, L["Wait for the current cast or channel to finish."] end
         end
     end
     preview = { key = key, bar = bar, wasEditing = bar.isInEditMode }
@@ -221,7 +222,7 @@ function ns:StartCastbarPreview(key)
     local ok = pcall(bar.UpdateShownState, bar)
     if not ok then
         self:StopCastbarPreview()
-        return false, "The beta client could not show its native castbar preview."
+        return false, L["The beta client could not show its native castbar preview."]
     end
     self:RefreshCastbars()
     NotifyUI()

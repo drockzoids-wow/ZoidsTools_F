@@ -16,6 +16,18 @@ function recovery:GetSnapshot()
     end
 end
 
+function recovery:GetPreset()
+    if loaded and type(ZoidsTools_FRecoveryPresetDB) == "table" and next(ZoidsTools_FRecoveryPresetDB) then
+        return ZoidsTools_FRecoveryPresetDB
+    end
+end
+
+function recovery:SavePreset(db)
+    if not loaded or type(db) ~= "table" or not next(db) then return false end
+    ZoidsTools_FRecoveryPresetDB = Copy(db)
+    return true
+end
+
 function recovery:Capture()
     if not loaded or type(source) ~= "table" or not next(source) then return false end
     -- Replace only after copying, so later edits cannot mutate the snapshot.

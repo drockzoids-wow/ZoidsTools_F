@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
 
 function ns:HasDamageMeterAPI()
     return type(C_DamageMeter) == "table"
@@ -31,9 +32,9 @@ ns.RegisterMeterEvent = ns.RegisterCompatibleEvent
 
 function ns:GetCompatibilityStatus()
     local version, build, _, interface = GetBuildInfo()
-    local state = self:IsMeterDataAvailable() and "Meter API available; in-game validation required."
-        or "Meter data unavailable on this client. Preview remains available."
-    return string.format("Client %s (%s), interface %s. %s", tostring(version), tostring(build), tostring(interface), state)
+    local state = self:IsMeterDataAvailable() and L["Meter API available; in-game validation required."]
+        or L["Meter data unavailable on this client. Preview remains available."]
+    return string.format(L["Client %s (%s), interface %s. %s"], tostring(version), tostring(build), tostring(interface), state)
 end
 
 function ns:GetBlizzardDamageMeterEnabled()

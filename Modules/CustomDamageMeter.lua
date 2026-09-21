@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
 
 local FRAME_NAME = "ZoidsTools_FCustomDamageMeter"
 local DEFAULT_ROW_COUNT = 5
@@ -30,29 +31,29 @@ local FALLBACK_NUMBER_BREAKPOINTS = {
 
 local METER_CATEGORIES = {
     {
-        label = DAMAGE or "Damage",
+        label = DAMAGE or L["Damage"],
         types = {
-            { key = "DamageDone", enum = "DamageDone", global = "DAMAGE_METER_TYPE_DAMAGE_DONE", label = "Damage Done" },
-            { key = "Dps", enum = "Dps", global = "DAMAGE_METER_TYPE_DPS", label = "DPS" },
-            { key = "DamageTaken", enum = "DamageTaken", global = "DAMAGE_METER_TYPE_DAMAGE_TAKEN", label = "Damage Taken" },
-            { key = "AvoidableDamageTaken", enum = "AvoidableDamageTaken", global = "DAMAGE_METER_TYPE_AVOIDABLE_DAMAGE_TAKEN", label = "Avoidable Damage Taken" },
-            { key = "EnemyDamageTaken", enum = "EnemyDamageTaken", global = "DAMAGE_METER_TYPE_ENEMY_DAMAGE_TAKEN", label = "Enemy Damage Taken" },
+            { key = "DamageDone", enum = "DamageDone", global = "DAMAGE_METER_TYPE_DAMAGE_DONE", label = L["Damage Done"] },
+            { key = "Dps", enum = "Dps", global = "DAMAGE_METER_TYPE_DPS", label = L["DPS"] },
+            { key = "DamageTaken", enum = "DamageTaken", global = "DAMAGE_METER_TYPE_DAMAGE_TAKEN", label = L["Damage Taken"] },
+            { key = "AvoidableDamageTaken", enum = "AvoidableDamageTaken", global = "DAMAGE_METER_TYPE_AVOIDABLE_DAMAGE_TAKEN", label = L["Avoidable Damage Taken"] },
+            { key = "EnemyDamageTaken", enum = "EnemyDamageTaken", global = "DAMAGE_METER_TYPE_ENEMY_DAMAGE_TAKEN", label = L["Enemy Damage Taken"] },
         },
     },
     {
-        label = rawget(_G, "HEALING") or "Healing",
+        label = rawget(_G, "HEALING") or L["Healing"],
         types = {
-            { key = "HealingDone", enum = "HealingDone", global = "DAMAGE_METER_TYPE_HEALING_DONE", label = "Healing Done" },
-            { key = "Hps", enum = "Hps", global = "DAMAGE_METER_TYPE_HPS", label = "HPS" },
-            { key = "Absorbs", enum = "Absorbs", global = "DAMAGE_METER_TYPE_ABSORBS", label = "Absorbs" },
+            { key = "HealingDone", enum = "HealingDone", global = "DAMAGE_METER_TYPE_HEALING_DONE", label = L["Healing Done"] },
+            { key = "Hps", enum = "Hps", global = "DAMAGE_METER_TYPE_HPS", label = L["HPS"] },
+            { key = "Absorbs", enum = "Absorbs", global = "DAMAGE_METER_TYPE_ABSORBS", label = L["Absorbs"] },
         },
     },
     {
-        label = rawget(_G, "ACTIONS") or "Actions",
+        label = rawget(_G, "ACTIONS") or L["Actions"],
         types = {
-            { key = "Interrupts", enum = "Interrupts", global = "DAMAGE_METER_TYPE_INTERRUPTS", label = "Interrupts" },
-            { key = "Dispels", enum = "Dispels", global = "DAMAGE_METER_TYPE_DISPELS", label = "Dispels" },
-            { key = "Deaths", enum = "Deaths", global = "DAMAGE_METER_TYPE_DEATHS", label = "Deaths" },
+            { key = "Interrupts", enum = "Interrupts", global = "DAMAGE_METER_TYPE_INTERRUPTS", label = L["Interrupts"] },
+            { key = "Dispels", enum = "Dispels", global = "DAMAGE_METER_TYPE_DISPELS", label = L["Dispels"] },
+            { key = "Deaths", enum = "Deaths", global = "DAMAGE_METER_TYPE_DEATHS", label = L["Deaths"] },
         },
     },
 }
@@ -83,16 +84,16 @@ local selectedRecentSessions = {}
 
 local sampleSources = {
     { name = "Dottindrock", classFilename = "WARLOCK", totalAmount = 128400000, amountPerSecond = 2140000, isLocalPlayer = true },
-    { name = "Party Member", classFilename = "PALADIN", totalAmount = 106800000, amountPerSecond = 1780000 },
-    { name = "Party Member", classFilename = "SHAMAN", totalAmount = 94500000, amountPerSecond = 1575000 },
-    { name = "Party Member", classFilename = "WARRIOR", totalAmount = 81300000, amountPerSecond = 1355000 },
-    { name = "Party Member", classFilename = "DRUID", totalAmount = 69700000, amountPerSecond = 1162000 },
+    { name = L["Party Member"], classFilename = "PALADIN", totalAmount = 106800000, amountPerSecond = 1780000 },
+    { name = L["Party Member"], classFilename = "SHAMAN", totalAmount = 94500000, amountPerSecond = 1575000 },
+    { name = L["Party Member"], classFilename = "WARRIOR", totalAmount = 81300000, amountPerSecond = 1355000 },
+    { name = L["Party Member"], classFilename = "DRUID", totalAmount = 69700000, amountPerSecond = 1162000 },
 }
 
 local sampleClasses = { "MAGE", "ROGUE", "HUNTER", "PRIEST", "DEMONHUNTER", "MONK", "EVOKER" }
 for index = #sampleSources + 1, MAX_ROW_COUNT do
     sampleSources[index] = {
-        name = "Preview Player " .. index,
+        name = string.format(L["Preview Player %d"], index),
         classFilename = sampleClasses[((index - 1) % #sampleClasses) + 1],
         totalAmount = math.max(1000000, 69700000 - ((index - 5) * 4300000)),
         amountPerSecond = math.max(25000, 1162000 - ((index - 5) * 72000)),
@@ -124,7 +125,7 @@ local function GetSessionType(windowIndex)
 end
 
 local function GetSessionLabel(value)
-    return NormalizeSessionType(value) == "overall" and "Overall" or "Current Segment"
+    return NormalizeSessionType(value) == "overall" and L["Overall"] or L["Current Segment"]
 end
 
 local function GetSelectedRecentSession(windowIndex)
@@ -516,7 +517,7 @@ local function CreateResetButton(frame, rightAnchor)
 
     button:SetScript("OnEnter", function(self)
         self.icon:SetVertexColor(1, 0.82, 0.28)
-        ShowTooltip(self, "Reset Meter Data", "Clears all Blizzard damage meter sessions.")
+        ShowTooltip(self, L["Reset Meter Data"], L["Clears all Blizzard damage meter sessions."])
     end)
     button:SetScript("OnLeave", function(self)
         self.icon:SetVertexColor(0.86, 0.86, 0.86)
@@ -524,11 +525,11 @@ local function CreateResetButton(frame, rightAnchor)
     end)
     button:SetScript("OnClick", function()
         if InCombatLockdown and InCombatLockdown() then
-            ns:Print("Damage meter data cannot be reset during combat.")
+            ns:Print(L["Damage meter data cannot be reset during combat."])
             return
         end
         if not C_DamageMeter or not C_DamageMeter.ResetAllCombatSessions then
-            ns:Print("Blizzard damage meter reset is not available.")
+            ns:Print(L["Blizzard damage meter reset is not available."])
             return
         end
         if securecallfunction then
@@ -559,7 +560,7 @@ local function CreateSettingsButton(frame)
 
     button:SetScript("OnEnter", function(self)
         self.icon:SetVertexColor(0.86, 0.66, 0.24)
-        ShowTooltip(self, "ZoidsTools_F Meter Settings", "Open ZoidsTools_F directly to the Meters page.")
+        ShowTooltip(self, L["ZoidsTools_F Meter Settings"], L["Open ZoidsTools_F directly to the Meters page."])
     end)
     button:SetScript("OnLeave", function(self)
         self.icon:SetVertexColor(0.62, 0.46, 0.16)
@@ -715,7 +716,7 @@ local function OpenSessionMenu(owner, frame)
             local rawName = availableSession.name
             local sessionName = not IsSecret(rawName) and type(rawName) == "string" and rawName ~= "" and rawName or nil
             local combatNumberFormat = rawget(_G, "DAMAGE_METER_COMBAT_NUMBER")
-            sessionName = sessionName or ((combatNumberFormat and combatNumberFormat:format(sessionID)) or ("Combat " .. sessionID))
+            sessionName = sessionName or ((combatNumberFormat and combatNumberFormat:format(sessionID)) or string.format(L["Combat %d"], sessionID))
             local duration = FormatSessionDuration(availableSession.durationSeconds)
             entries[#entries + 1] = {
                 label = duration and string.format("%s [%s]", sessionName, duration) or sessionName,
@@ -729,12 +730,12 @@ local function OpenSessionMenu(owner, frame)
 
     local recentCount = #entries
     entries[#entries + 1] = {
-        label = "Current Segment",
+        label = L["Current Segment"],
         selected = not selected and GetSessionType(windowIndex) == "current",
         sessionType = "current",
     }
     entries[#entries + 1] = {
-        label = "Overall",
+        label = L["Overall"],
         selected = not selected and GetSessionType(windowIndex) == "overall",
         sessionType = "overall",
     }
@@ -798,12 +799,13 @@ local function CreateSessionButton(frame, resetButton)
     button.text = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     button.text:SetAllPoints()
     button.text:SetJustifyH("CENTER")
-    button.text:SetFont("Fonts\\FRIZQT__.TTF", 15, "OUTLINE")
+    local font = GameFontNormal and GameFontNormal:GetFont() or STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"
+    button.text:SetFont(font, 15, "OUTLINE")
     button.text:SetShadowColor(0, 0, 0, 1)
     button.text:SetShadowOffset(1, -1)
 
     local function RefreshTooltip(self)
-        ShowTooltip(self, "Session: " .. GetEffectiveSessionLabel(frame.windowIndex), "Choose Current, Overall, or a recent combat segment.")
+        ShowTooltip(self, string.format(L["Session: %s"], GetEffectiveSessionLabel(frame.windowIndex)), L["Choose Current, Overall, or a recent combat segment."])
     end
 
     button:SetScript("OnEnter", function(self)
@@ -825,7 +827,7 @@ end
 local function UpdateMeterTitle(frame)
     if not frame or not frame.title then return end
     local label = GetMeterLabel(GetMeterType(frame.windowIndex))
-    frame.title:SetText(moveMode and (label .. "  •  Preview") or label)
+    frame.title:SetText(moveMode and (label .. L["  •  Preview"]) or label)
     if frame.titleButton then
         local textWidth = frame.title:GetStringWidth() or 0
         local availableWidth = math.max(40, (frame:GetWidth() or DEFAULT_WIDTH) - 85)
@@ -835,7 +837,7 @@ end
 
 local function OpenMeterTypeMenu(owner)
     if not MenuUtil or not MenuUtil.CreateContextMenu then
-        ns:Print("The damage meter type menu is not available.")
+        ns:Print(L["The damage meter type menu is not available."])
         return
     end
 
@@ -878,7 +880,7 @@ local function CreateMeterTitleButton(frame)
         OpenMeterTypeMenu(self)
     end)
     button:SetScript("OnEnter", function(self)
-        ShowTooltip(self, "Change Meter", "Choose a Damage, Healing, or Actions view.")
+        ShowTooltip(self, L["Change Meter"], L["Choose a Damage, Healing, or Actions view."])
     end)
     button:SetScript("OnLeave", function()
         GameTooltip:Hide()
@@ -892,7 +894,7 @@ local function ApplyRowTextScale(row)
     local scale = GetTextScale()
     local baseSize = (tonumber(row.baseFontSize) or 10) * 1.2
     local size = math.max(8, math.floor((baseSize * scale) + 0.5))
-    local fontPath = row.fontPath or "Fonts\\FRIZQT__.TTF"
+    local fontPath = row.fontPath or STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"
     local fontFlags = row.fontFlags or ""
 
     row.rank:SetFont(fontPath, size, fontFlags)
@@ -1011,7 +1013,7 @@ local function CreateResizeHandle(frame)
         if ScheduleRefresh then ScheduleRefresh(true) end
     end)
     handle:SetScript("OnEnter", function(self)
-        ShowTooltip(self, "Resize Damage Meter", "Drag to change the width and the number of visible player rows.")
+        ShowTooltip(self, L["Resize Damage Meter"], L["Drag to change the width and the number of visible player rows."])
     end)
     handle:SetScript("OnLeave", function()
         GameTooltip:Hide()
@@ -1169,11 +1171,11 @@ local function CreateMeterFrame(windowIndex)
 
     frame.empty = frame:CreateFontString(nil, "OVERLAY", "GameFontDisable")
     frame.empty:SetPoint("CENTER", frame, "CENTER", 0, -8)
-    frame.empty:SetText("No current combat data")
+    frame.empty:SetText(L["No current combat data"])
 
     frame.moveHint = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     frame.moveHint:SetPoint("BOTTOM", frame, "TOP", 0, 5)
-    frame.moveHint:SetText("Drag to move • resize from the bottom-right corner • lock when finished")
+    frame.moveHint:SetText(L["Drag to move • resize from the bottom-right corner • lock when finished"])
     frame.moveHint:SetTextColor(1, 0.78, 0.22)
     frame.moveHint:Hide()
 
@@ -1276,7 +1278,7 @@ local function UpdateRow(frame, row, source, index, maxAmount)
     row.bar:SetValue(amount)
     SetClassIcon(row.icon, source)
     row.rank:SetText(index)
-    row.name:SetText(source.name or UNKNOWN or "Unknown")
+    row.name:SetText(source.name or UNKNOWN or L["Unknown"])
     row.value:SetText(FormatRowValue(source, frame.windowIndex))
     row.sourceData = source
     row.sourceIndex = index
@@ -1298,8 +1300,9 @@ local function RefreshMeterWindow(windowIndex)
     UpdateSessionButton(frame)
     UpdateMeterTitle(frame)
     local selectedSession = GetSelectedRecentSession(windowIndex)
-    local emptyPrefix = selectedSession and "No selected segment " or (GetSessionType(windowIndex) == "overall" and "No overall " or "No current ")
-    frame.empty:SetText(emptyPrefix .. GetMeterLabel(GetMeterType(windowIndex)) .. " data")
+    local emptyFormat = selectedSession and L["No %s data for the selected segment"]
+        or (GetSessionType(windowIndex) == "overall" and L["No overall %s data"] or L["No current %s data"])
+    frame.empty:SetText(string.format(emptyFormat, GetMeterLabel(GetMeterType(windowIndex))))
 
     local sources
     local maxAmount
@@ -1332,7 +1335,7 @@ local function RefreshMeterWindow(windowIndex)
     end
 
     if not preview and not IsDamageMeterAvailable() then
-        frame.empty:SetText("Meter data unavailable on this client")
+        frame.empty:SetText(L["Meter data unavailable on this client"])
     end
     frame.empty:SetShown(shown == 0)
     frame:Show()
@@ -1502,7 +1505,7 @@ local function GetSourceDetails(frame, source)
 end
 
 local function GetSpellDisplay(spell)
-    if not spell then return UNKNOWN or "Unknown", 134400 end
+    if not spell then return UNKNOWN or L["Unknown"], 134400 end
 
     local spellID = spell.spellID
     local spellName
@@ -1519,7 +1522,7 @@ local function GetSpellDisplay(spell)
         elseif creatureName ~= nil and tostring(creatureName) ~= "" then
             spellName = tostring(creatureName)
         else
-            spellName = UNKNOWN or "Unknown"
+            spellName = UNKNOWN or L["Unknown"]
         end
     end
 
@@ -1625,12 +1628,12 @@ local function CreateSourceSummary()
 
     local spellHeader = frame.columnHeader:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     spellHeader:SetPoint("LEFT", frame.columnHeader, "LEFT", 28, 0)
-    spellHeader:SetText("Spell")
+    spellHeader:SetText(L["Spell"])
     frame.amountHeader = frame.columnHeader:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     frame.amountHeader:SetPoint("RIGHT", frame.columnHeader, "RIGHT", -122, 0)
     frame.amountHeader:SetWidth(92)
     frame.amountHeader:SetJustifyH("RIGHT")
-    frame.amountHeader:SetText("Amount")
+    frame.amountHeader:SetText(L["Amount"])
     frame.rateHeader = frame.columnHeader:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     frame.rateHeader:SetPoint("RIGHT", frame.columnHeader, "RIGHT", -49, 0)
     frame.rateHeader:SetWidth(70)
@@ -1648,7 +1651,7 @@ local function CreateSourceSummary()
 
     frame.empty = frame:CreateFontString(nil, "OVERLAY", "GameFontDisable")
     frame.empty:SetPoint("CENTER", frame, "CENTER", 0, -10)
-    frame.empty:SetText("No detailed breakdown is available for this entry.")
+    frame.empty:SetText(L["No detailed breakdown is available for this entry."])
 
     frame.scrollHint = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     frame.scrollHint:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 7)
@@ -1700,7 +1703,7 @@ local function RefreshSourceSummary()
 
     frame.empty:SetShown(count == 0)
     if frame.maxScrollOffset > 0 then
-        frame.scrollHint:SetFormattedText("Mouse wheel  •  %d–%d of %d", frame.scrollOffset + 1, math.min(count, frame.scrollOffset + SUMMARY_ROW_COUNT), count)
+        frame.scrollHint:SetFormattedText(L["Mouse wheel  •  %d–%d of %d"], frame.scrollOffset + 1, math.min(count, frame.scrollOffset + SUMMARY_ROW_COUNT), count)
     else
         frame.scrollHint:SetText("")
     end
@@ -1733,14 +1736,14 @@ OpenSourceSummary = function(meterFrame, source)
     frame.sourceData = source
 
     local sourceName = source.name
-    if not IsSecret(sourceName) and sourceName == nil then sourceName = UNKNOWN or "Unknown" end
+    if not IsSecret(sourceName) and sourceName == nil then sourceName = UNKNOWN or L["Unknown"] end
     frame.name:SetText(sourceName)
     local r, g, b = GetClassColor(source.classFilename)
     frame.sourceColor = { r, g, b }
     frame:SetBackdropBorderColor(r, g, b, 0.95)
     frame.subtitle:SetText(GetMeterLabel(GetMeterType(meterFrame.windowIndex)) .. "  •  " .. GetEffectiveSessionLabel(meterFrame.windowIndex))
     local meterType = GetMeterType(meterFrame.windowIndex)
-    frame.rateHeader:SetText((meterType == "HealingDone" or meterType == "Hps") and "HPS" or "DPS")
+    frame.rateHeader:SetText((meterType == "HealingDone" or meterType == "Hps") and L["HPS"] or L["DPS"])
 
     frame:ClearAllPoints()
     frame:SetPoint("TOPLEFT", meterFrame, "TOPRIGHT", 8, 0)
@@ -1775,12 +1778,12 @@ function ns:SetCustomDamageMeterEnabled(value)
     if not db then return end
     local enabled = value == true
     if enabled and not ns:HasDamageMeterAPI() then
-        ns:Print("Meter API unavailable on this client. Use Preview / Move to arrange the UI.")
+        ns:Print(L["Meter API unavailable on this client. Use Preview / Move to arrange the UI."])
         return false
     end
     if enabled and ns.GetBlizzardDamageMeterEnabled and ns:GetBlizzardDamageMeterEnabled() then
         if not ns.SetBlizzardDamageMeterEnabled or ns:SetBlizzardDamageMeterEnabled(false) == false then
-            ns:Print("ZoidsTools_F could not disable Blizzard's damage meter.")
+            ns:Print(L["ZoidsTools_F could not disable Blizzard's damage meter."])
             return false
         end
     end
@@ -2020,17 +2023,17 @@ end
 function ns:GetCustomDamageMeterStatusText()
     local db = GetDB()
     if not db or db.enabled ~= true then
-        return "Disabled. Preview and position it before enabling if desired."
+        return L["Disabled. Preview and position it before enabling if desired."]
     end
     if not IsDamageMeterAvailable() then
-        return "Enabled, but Blizzard damage meter data is not currently available."
+        return L["Enabled, but Blizzard damage meter data is not currently available."]
     end
-    local summary = "Window 1: " .. GetSessionLabel(GetSessionType(1)) .. " " .. GetMeterLabel(GetMeterType(1)) .. " • " .. GetVisibleRowCount(meterFrames[1]) .. " rows"
+    local summary = string.format(L["Window %d: %s %s - %d rows"], 1, GetSessionLabel(GetSessionType(1)), GetMeterLabel(GetMeterType(1)), GetVisibleRowCount(meterFrames[1]))
     local secondDB = GetDB(2) or {}
     if secondDB.enabled == true then
-        summary = summary .. "\nWindow 2: " .. GetSessionLabel(GetSessionType(2)) .. " " .. GetMeterLabel(GetMeterType(2)) .. " • " .. GetVisibleRowCount(meterFrames[2]) .. " rows"
+        summary = summary .. "\n" .. string.format(L["Window %d: %s %s - %d rows"], 2, GetSessionLabel(GetSessionType(2)), GetMeterLabel(GetMeterType(2)), GetVisibleRowCount(meterFrames[2]))
     end
-    return summary .. " • 0.15-second refresh limit."
+    return summary .. L[" • 0.15-second refresh limit."]
 end
 
 function ns:InitializeCustomDamageMeter()

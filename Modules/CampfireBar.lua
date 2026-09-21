@@ -1,10 +1,20 @@
 local _, ns = ...
+local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
 local watcher, bar, controller, title
 local buttons, entries = {}, {}
 local dirty = true
 local nearby = false
 local scanElapsed, tickElapsed = 0, 0
 local moving = false
+-- Forever beta IDs; localization must not depend on translated aura/item text.
+-- Sources and update procedure: Locales/README.md.
+local campfireAuras = { [1229739] = true, [1283391] = true, [1289723] = true }
+local campItems = {}
+for _, id in ipairs({ 279956, 279970, 279990, 279944, 279988, 279955,
+    279976, 279985, 279987, 279950, 279949, 279989, 279962, 279964, 279947,
+    279978, 279941, 279945, 279960, 279948, 279952, 279979, 279969, 279938,
+    279972, 279973, 279943, 279959, 279957, 279982, 279968, 279940, 279951,
+    279967, 279965, 279966 }) do campItems[id] = true end
 
 local function Secret(value)
     return type(issecretvalue) == "function" and issecretvalue(value)
@@ -35,9 +45,15 @@ function ns:HasCampfireBuff()
         local aura = Call(C_UnitAuras and C_UnitAuras.GetAuraDataByIndex, "player", index, "HELPFUL")
         local name
         if type(aura) == "table" then
+            local spellID = Number(aura.spellId)
+            if spellID and campfireAuras[spellID] then return true end
             name = aura.name
         elseif not (C_UnitAuras and C_UnitAuras.GetAuraDataByIndex) then
             name = Call(UnitBuff, "player", index)
+            if type(UnitBuff) == "function" then
+                local ok, _, _, _, _, _, _, _, _, _, spellID = pcall(UnitBuff, "player", index)
+                if ok and Number(spellID) and campfireAuras[spellID] then return true end
+            end
             if name == nil then break end
         elseif aura == nil then
             break
@@ -82,7 +98,7 @@ function ns:FindCampfireItems()
                 if id and id > 0 then
                     counts[id] = (counts[id] or 0) + (Number(info.stackCount) or 1)
                     local entry = byID[id]
-                    if not entry and RequiresCampfire(bag, slot) and not IsRecipe(id)
+                    if not entry and (campItems[id] or RequiresCampfire(bag, slot)) and not IsRecipe(id)
                         and Call(C_Item and C_Item.GetItemSpell or GetItemSpell, id) then
                         entry = { id = id, count = 0, bag = bag, slot = slot,
                             icon = not Secret(info.iconFileID) and info.iconFileID or 134400 }
@@ -137,7 +153,7 @@ local function CreateBar()
     ns.UI.Theme.ApplyPanelBackdrop(bar)
     title = bar:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     title:SetPoint("TOP", 0, -6)
-    title:SetText("CAMPFIRE NEARBY")
+    title:SetText(L["CAMPFIRE NEARBY"])
     title:SetTextColor(unpack(ns.UI.Theme.colors.gold))
     local db = ns.db.campfire
     bar:SetPoint(db.point, UIParent, db.relativePoint, db.x, db.y)
@@ -225,13 +241,13 @@ function ns:GetCampfireBarEnabled()
 end
 
 function ns:GetCampfireBarStatus()
-    if not self:GetCampfireBarEnabled() then return "Campfire bar is disabled." end
-    if type(RegisterStateDriver) ~= "function" then return "Campfire bar is unavailable on this client." end
-    if not C_TooltipInfo or not C_TooltipInfo.GetBagItem then return "Item tooltip scanning is unavailable on this client." end
-    if InCombat() then return "Campfire bar is hidden during combat." end
-    if not nearby then return "Waiting for Welcoming Campfire or Campfire Nearby. Found " .. #entries .. " matching item types in your bags." end
-    return #entries == 0 and "Campfire nearby, but no matching usable items found in your bags."
-        or ("Campfire nearby: " .. #entries .. " item types available.")
+    if not self:GetCampfireBarEnabled() then return L["Campfire bar is disabled."] end
+    if type(RegisterStateDriver) ~= "function" then return L["Campfire bar is unavailable on this client."] end
+    if not C_TooltipInfo or not C_TooltipInfo.GetBagItem then return L["Item tooltip scanning is unavailable on this client."] end
+    if InCombat() then return L["Campfire bar is hidden during combat."] end
+    if not nearby then return string.format(L["Waiting for a campfire. Found %d matching item types in your bags."], #entries) end
+    return #entries == 0 and L["Campfire nearby, but no matching usable items found in your bags."]
+        or string.format(L["Campfire nearby: %d item types available."], #entries)
 end
 
 function ns:RefreshCampfireBar(rescan)

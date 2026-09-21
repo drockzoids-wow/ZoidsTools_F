@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
 local UI = ns.UI
 
 function UI.CreateWindowsPage(parent)
@@ -16,24 +17,30 @@ function UI.CreateWindowsPage(parent)
         control:SetPoint("TOPLEFT", 0, y)
         controls[#controls + 1] = control
     end
-    Check("enabled", "Enable window movement", "Drag the Move handle on supported Blizzard windows. Changes made in combat apply when combat ends.", 0)
-    Check("moveBags", "Move bags", "Move individual bags and the combined backpack using their title handles.", -38)
-    Check("showBagHandles", "Show bag move handles", "Hide handles to keep bags in place without an extra drag area.", -76)
-    Check("savePositions", "Remember window positions", "Restore moved windows and bags when reopened and after reloading. Turning this off keeps saved positions for later.", -114)
-    Check("scaleEnabled", "Ctrl + mouse wheel to scale", "Hold Ctrl and scroll over a window or its Move handle. Scales are saved independently of positions.", -152)
+    Check("enabled", L["Enable window movement"], L["Drag the Move handle on supported Blizzard windows. Changes made in combat apply when combat ends."], 0)
+    Check("moveBags", L["Move bags"], L["Move individual bags and the combined backpack using their title handles."], -38)
+    Check("showBagHandles", L["Show bag move handles"], L["Hide handles to keep bags in place without an extra drag area."], -76)
+    Check("savePositions", L["Remember window positions"], L["Restore moved windows and bags when reopened and after reloading. Turning this off keeps saved positions for later."], -114)
+    Check("scaleEnabled", L["Ctrl + mouse wheel to scale"], L["Hold Ctrl and scroll over a window or its Move handle. Scales are saved independently of positions."], -152)
 
-    local resetPositions = UI.CreateButton(page, "Reset all positions", 190, 30)
-    resetPositions:SetPoint("TOPLEFT", 0, -210)
+    local corner = UI.CreateDropdown(page, "Bag anchor corner", "Open a bag to change its corner without moving it. Solo bags share this position; multiple bags keep Blizzard's stacking.", {
+        {value="BOTTOMRIGHT",text="Bottom right"}, {value="BOTTOMLEFT",text="Bottom left"},
+        {value="TOPRIGHT",text="Top right"}, {value="TOPLEFT",text="Top left"},
+    }, function() return ns:GetBagAnchorCorner() end,
+    function(value) ns:SetBagAnchorCorner(value) end, 210)
+    corner:SetPoint("TOPLEFT", 0, -196)
+    local resetPositions = UI.CreateButton(page, L["Reset all positions"], 190, 30)
+    resetPositions:SetPoint("TOPLEFT", 0, -272)
     resetPositions:SetScript("OnClick", function() ns:ResetMovableWindowPositions(); page:Refresh() end)
-    local resetScales = UI.CreateButton(page, "Reset all scales", 190, 30)
+    local resetScales = UI.CreateButton(page, L["Reset all scales"], 190, 30)
     resetScales:SetPoint("LEFT", resetPositions, "RIGHT", 12, 0)
     resetScales:SetScript("OnClick", function() ns:ResetMovableWindowScales(); page:Refresh() end)
 
     local instructions = UI.CreateBodyText(page,
-        "Drag the Move handle at the top of a window or bag.\n\nCtrl + mouse wheel: adjust size (60% to 180%).\nCtrl + right-click a Move handle: reset its position.\n\nMove the windowed world map by its title bar; it uses WoW's own position saving and does not support scaling.\n\nAs in retail, protected frames such as the flight map and guild controls stay under Blizzard's control. Action bars, unit frames, and third-party bag replacements are outside this mover's scope.", 510)
-    instructions:SetPoint("TOPLEFT", 0, -264)
+        "Drag a bag's Move handle to set the shared solo position. The selected corner stays fixed as bag size changes. Multiple bags stack from that position.\n\nCtrl + mouse wheel: scale. Ctrl + right-click: reset position. Protected windows remain under Blizzard's control.", 510)
+    instructions:SetPoint("TOPLEFT", 0, -318)
     local status = UI.CreateBodyText(page, "", 510)
-    status:SetPoint("TOPLEFT", 0, -440)
+    status:SetPoint("TOPLEFT", 0, -455)
 
     function page:Refresh()
         for index, control in ipairs(controls) do
@@ -41,12 +48,14 @@ function UI.CreateWindowsPage(parent)
             UI.SetControlEnabled(control, index == 1 or ns.db.windows.enabled)
         end
         UI.SetControlEnabled(controls[3], ns.db.windows.enabled and ns.db.windows.moveBags)
+        corner:Refresh()
         local combat = InCombatLockdown()
+        UI.SetControlEnabled(corner, not combat and ns.db.windows.enabled and ns.db.windows.moveBags)
         UI.SetControlEnabled(resetPositions, not combat)
         UI.SetControlEnabled(resetScales, not combat)
         local windows, bags, scales = ns:GetMovableWindowStats()
-        status:SetText(combat and "Movement is paused during combat. Changes apply after combat."
-            or string.format("Detected: %d windows, %d bags. Saved scales: %d.\nMore windows are detected as you open them.", windows, bags, scales))
+        status:SetText(combat and L["Movement is paused during combat. Changes apply after combat."]
+            or string.format(L["Detected: %d windows, %d bags. Saved scales: %d.\nMore windows are detected as you open them."], windows, bags, scales))
     end
     page:RegisterEvent("PLAYER_REGEN_DISABLED")
     page:RegisterEvent("PLAYER_REGEN_ENABLED")

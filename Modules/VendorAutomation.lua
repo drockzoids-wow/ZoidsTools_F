@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
 local events, visit
 local function Secret(v) return issecretvalue and issecretvalue(v) end
 local function Call(fn, ...)
@@ -15,7 +16,7 @@ local function SellJunk(session, final)
     local api = C_MerchantFrame
     local button = MerchantSellAllJunkButton
     if not api or type(api.SellAllJunkItems) ~= "function" then
-        if final then ns:Print("Auto sell unavailable: this client has no bulk junk-sale API.") end
+        if final then ns:Print(L["Auto sell unavailable: this client has no bulk junk-sale API."]) end
         return
     end
     if not button or not button:IsShown() then return end
@@ -27,7 +28,7 @@ local function SellJunk(session, final)
     -- This is the exact bulk action used by the vendor confirmation's Yes
     -- callback. No popup is created and no global popup handler is replaced.
     local ok, result = pcall(api.SellAllJunkItems)
-    if not ok or result == false then ns:Print("Auto sell could not complete the bulk junk sale.") end
+    if not ok or result == false then ns:Print(L["Auto sell could not complete the bulk junk sale."]) end
 end
 
 local function Repair(session, final)
@@ -51,15 +52,15 @@ local function Repair(session, final)
     end
     if not available then
         if final then
-            ns:Print(guild and "Auto repair skipped: guild funds, allowance, or permission unavailable."
-                or "Auto repair skipped: not enough gold.")
+            ns:Print(guild and L["Auto repair skipped: guild funds, allowance, or permission unavailable."]
+                or L["Auto repair skipped: not enough gold."])
         end
         return
     end
     if type(RepairAllItems) ~= "function" then return end
     session.repaired = true
     local ok, result = pcall(RepairAllItems, guild)
-    if not ok or result == false then ns:Print("Auto repair could not complete.") end
+    if not ok or result == false then ns:Print(L["Auto repair could not complete."]) end
 end
 
 local function Run(session, final)

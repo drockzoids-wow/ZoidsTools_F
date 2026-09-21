@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
 
 local LDB_NAME = "ZoidsTools_F"
 
@@ -80,7 +81,7 @@ function ns:InitializeMinimapButton()
     end
 
     if not LibStub then
-        self:Print("LibStub not found. Minimap button unavailable.")
+        self:Print(L["LibStub not found. Minimap button unavailable."])
         return
     end
 
@@ -88,7 +89,7 @@ function ns:InitializeMinimapButton()
     local DBIcon = LibStub("LibDBIcon-1.0", true)
 
     if not LDB or not DBIcon then
-        self:Print("LibDataBroker or LibDBIcon not found. Minimap button unavailable.")
+        self:Print(L["LibDataBroker or LibDBIcon not found. Minimap button unavailable."])
         return
     end
 
@@ -108,9 +109,9 @@ function ns:InitializeMinimapButton()
 
         OnTooltipShow = function(tooltip)
             tooltip:AddLine("ZoidsTools_F")
-            tooltip:AddLine("Left-click: Open tools", 1, 1, 1)
-            tooltip:AddLine("Right-click: Windows & Bags", 1, 1, 1)
-            tooltip:AddLine("Drag: Move minimap button", 0.8, 0.8, 0.8)
+            tooltip:AddLine(L["Left-click: Open tools"], 1, 1, 1)
+            tooltip:AddLine(L["Right-click: Windows & Bags"], 1, 1, 1)
+            tooltip:AddLine(L["Drag: Move minimap button"], 0.8, 0.8, 0.8)
         end,
     })
 

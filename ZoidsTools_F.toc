@@ -1,24 +1,45 @@
 ## Interface: 160001
 ## Title: ZoidsTools Forever
-## Notes: Standalone Forever beta addon with damage meters and movable windows/bags.
+## Notes: Forever beta tools with damage meters, movable windows and a Completionist quest tracker.
 ## Author: Drockzoids
-## Version: 0.2.3-beta
+## Version: 0.2.4-beta
 ## X-Curse-Project-ID: 1700355
-## SavedVariables: ZoidsTools_FDB
-## OptionalDeps: ZoidsTools_F_Recovery, ZoidsTools_F_Preset
+## SavedVariables: ZoidsTools_FDB, ZoidsTools_FBackupDB, ZoidsTools_FPresetDB
+## SavedVariablesPerCharacter: ZoidsTools_FCompletionistDB
+## OptionalDeps: ZoidsTools_F_Recovery, ZoidsTools_F_Preset, ZoidsForeverGuide
 ## IconTexture: Interface\AddOns\ZoidsTools_F\Media\ZoidToolsIcon.png
 
 Libs\LibStub\LibStub.lua
 Libs\LibCallbackHandler-1.0\CallbackHandler-1.0.lua
 Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
 Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
+Localization.lua
+Locales\enUS.lua
+Locales\deDE.lua
+Locales\esES.lua
+Locales\esMX.lua
+Locales\frFR.lua
+Locales\itIT.lua
+Locales\koKR.lua
+Locales\ptBR.lua
+Locales\ruRU.lua
+Locales\zhCN.lua
+Locales\zhTW.lua
+SettingsRecovery.lua
 Core.lua
 Compatibility.lua
+Completionist\Bootstrap.lua
+Completionist\Data.lua
+Completionist\PickupData.lua
+Completionist\Core.lua
+Completionist\Discovery.lua
+Completionist\UI.lua
 Modules\MovableWindows.lua
 Modules\UnitFrames.lua
 Modules\PlayerTooltip.lua
 Modules\ActionButtonRange.lua
 Modules\CampfireBar.lua
+Modules\ConsumableMacros.lua
 Modules\ZoneReputation.lua
 Modules\StatsWindow.lua
 Modules\Castbars.lua
@@ -33,10 +54,13 @@ UI\Windows.lua
 UI\UnitFrames.lua
 UI\Tooltips.lua
 UI\ActionBars.lua
+UI\Macros.lua
 UI\Stats.lua
 UI\Castbars.lua
 UI\Vendor.lua
 UI\Loot.lua
 UI\Quests.lua
+UI\Completionist.lua
 UI\Window.lua
+UI\RecoveryReminder.lua
 UI\Minimap.lua

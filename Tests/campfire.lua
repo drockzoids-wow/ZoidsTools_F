@@ -125,6 +125,12 @@ function RunCampfireTests(ns)
     buffs = {{name='Campfire Nearby'}}
     watcher.scripts.OnEvent(nil,'UNIT_AURA','player')
     assert(bar:IsShown(), 'Campfire Nearby alone must show the bar with matching items')
+    for _, spellID in ipairs({1229739, 1283391, 1289723}) do
+        buffs = {{name='Localized campfire name', spellId=spellID}}
+        assert(ns:HasCampfireBuff(), 'Known aura IDs must work in every locale')
+    end
+    buffs = {{name=secret, spellId=secret}}
+    assert(not ns:HasCampfireBuff(), 'Restricted aura IDs must be skipped')
     buffs = {}
     watcher.scripts.OnEvent(nil,'UNIT_AURA','player')
     assert(not bar:IsShown(), 'Removing Campfire Nearby must hide the bar')
@@ -180,4 +186,10 @@ function RunCampfireTests(ns)
     assert(ns:HasCampfireBuff(), 'Legacy aura lookup must also accept Campfire Nearby')
     C_TooltipInfo = nil
     assert(#ns:FindCampfireItems() == 0)
+    bag = {{itemID=279978, stackCount=3, iconFileID=100}, {itemID=40, stackCount=1}}
+    local localizedItems = ns:FindCampfireItems()
+    assert(#localizedItems == 1 and localizedItems[1].id == 279978 and localizedItems[1].count == 3,
+        'Known camping items must not depend on an English or available tooltip')
+    function UnitBuff() return 'Localized buff', nil, nil, nil, nil, nil, nil, nil, nil, 1283391 end
+    assert(ns:HasCampfireBuff(), 'Legacy aura spell IDs must work in every locale')
 end

@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
 
 ns.UI = ns.UI or {}
 
@@ -87,7 +88,9 @@ function UI.CreateCheckbox(parent, label, tooltip, getter, setter)
     end)
 
     checkbox:SetScript("OnClick", function(self)
-        setter(self:GetChecked() == true)
+        -- Classic clients can return 1/nil instead of a boolean check state.
+        local checked = self:GetChecked()
+        setter(checked == true or checked == 1)
 
         if self.Refresh then
             self:Refresh()
@@ -211,9 +214,11 @@ function UI.CreateButton(parent, text, width, height)
     button.text = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     button.text:SetPoint("CENTER")
     button.text:SetText(text)
+    button.text:SetWidth((width or 120) - 16)
 
     if button.text.SetWordWrap then
-        button.text:SetWordWrap(false)
+        button.text:SetWordWrap(ns.locale ~= nil and ns.locale ~= "enUS")
+        if ns.locale and ns.locale ~= "enUS" then button.text:SetHeight((height or 30) - 6) end
     end
 
     function button:SetText(value)
@@ -441,7 +446,7 @@ function UI.CreateDropdown(parent, label, tooltip, options, getter, setter, widt
             end
         end
 
-        return "None"
+        return L["None"]
     end
 
     local function HideIfMouseAway()
@@ -676,14 +681,14 @@ function UI.CreateMultiSelectDropdown(parent, label, tooltip, options, width)
         end
 
         if #selected == 0 then
-            return "None"
+            return L["None"]
         elseif #selected == #options then
-            return "All selected"
+            return L["All selected"]
         elseif #selected <= 2 then
             return table.concat(selected, ", ")
         end
 
-        return tostring(#selected) .. " selected"
+        return string.format(L["%d selected"], #selected)
     end
 
     local function HideIfMouseAway()

@@ -11,8 +11,12 @@ if args.runtime:
     sys.path.insert(0, args.runtime)
 from lupa.lua51 import LuaRuntime
 from persistence import check_persistence
+from builtin_recovery import check_builtin_recovery
+from localization import check_localization
 
 check_persistence(LuaRuntime, args.saved_variables)
+check_builtin_recovery(LuaRuntime)
+check_localization(LuaRuntime)
 
 root = Path(__file__).resolve().parents[1]
 lua = LuaRuntime(unpack_returned_tuples=True)
@@ -24,6 +28,13 @@ for file in files:
     assert path.is_file(), file
     compile_lua(path.read_text(encoding='utf-8-sig'), file)
 print(f'PASS: manifest and Lua 5.1 syntax ({len(files)} files)')
+
+macro_lua = LuaRuntime(unpack_returned_tuples=True)
+macro_lua.execute((root / 'Tests/macros.lua').read_text(encoding='utf-8'))
+macro_ns = macro_lua.eval('{ db = { macros = { healthEnabled=false, manaEnabled=false, healthCombatItems=true, manaCombatPotion=true } } }')
+macro_lua.execute((root / 'Modules/ConsumableMacros.lua').read_text(encoding='utf-8'), 'ZoidsTools_F', macro_ns)
+macro_lua.globals().RunMacroTests(macro_ns)
+print('PASS: consumable selection, classic Healthstones, combat deferral, item loading, macro ownership/capacity, empty bags and legacy APIs')
 
 lua.execute('''
 frames = {}
