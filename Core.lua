@@ -2,7 +2,7 @@ local addonName, ns = ...
 local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
 ns.addonName = addonName
 ns.title = "ZoidsTools Forever"
-ns.version = "0.2.5-beta"
+ns.version = "0.2.6-beta"
 
 local defaults = {
     reputation = { autoZone = true },
@@ -49,6 +49,55 @@ end
 
 function ns:Print(message)
     DEFAULT_CHAT_FRAME:AddMessage("|cfff5b833ZoidsTools Forever:|r " .. tostring(message))
+end
+
+local function ReadMemory()
+    if type(UpdateAddOnMemoryUsage) ~= "function" or type(GetAddOnMemoryUsage) ~= "function" then
+        return
+    end
+    local updated = pcall(UpdateAddOnMemoryUsage)
+    local ok, usage = pcall(GetAddOnMemoryUsage, addonName)
+    if not updated or not ok or (issecretvalue and issecretvalue(usage))
+        or type(usage) ~= "number" or usage ~= usage or usage < 0 or usage == math.huge then
+        return
+    end
+    return usage
+end
+
+function ns:ReportMemory(collect)
+    -- Normal readings never force collection. The explicit diagnostic compares
+    -- before/after once, outside combat; it is not an automatic optimization.
+    if collect and InCombatLockdown and InCombatLockdown() then
+        self:Print("Run the memory cleanup diagnostic after leaving combat.")
+        return
+    end
+    local usage = ReadMemory()
+    if not usage then
+        self:Print("Memory reporting is unavailable on this client.")
+        return
+    end
+    if collect then
+        if type(collectgarbage) ~= "function" then
+            self:Print("Memory cleanup diagnostic is unavailable on this client.")
+            return
+        end
+        local ok, result = pcall(collectgarbage, "collect")
+        if not ok or result == false then
+            self:Print("Memory cleanup diagnostic is unavailable on this client.")
+            return
+        end
+        local after = ReadMemory()
+        if not after then
+            self:Print("Cleanup requested, but the updated memory reading is unavailable.")
+            return
+        end
+        self:Print(string.format("v%s memory diagnostic: before %.2f MiB; after cleanup request %.2f MiB; change %+.2f MiB.",
+            self.version, usage / 1024, after / 1024, (after - usage) / 1024))
+        self:Print("Cleanup affects the whole UI; these readings are for the main addon only. This is a diagnostic, not a performance fix.")
+        return
+    end
+    self:Print(string.format("v%s main addon memory: %.2f MiB (%.0f KiB). Includes temporary Lua allocations; companions are reported separately by the game.",
+        self.version, usage / 1024, usage))
 end
 
 function ns:OpenConfig(page)
@@ -192,6 +241,10 @@ SlashCmdList.ZOIDSTOOLS_FOREVER = function(message)
         ns:OpenConfig("windows")
     elseif command == "status" then
         ns:Print(ns:GetCompatibilityStatus())
+    elseif command == "memory" then
+        ns:ReportMemory()
+    elseif command == "memory collect" then
+        ns:ReportMemory(true)
     elseif command == "savepreset" then
         local service = ZoidsTools_FRecoveryService
         local warning = service and service.GetPresetSaveWarning and service:GetPresetSaveWarning()

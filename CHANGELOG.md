@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 0.2.6-beta
+
+- Reduce Completionist quest-record memory with compact records while preserving all quest fields and discoveries. Reuse the class filter lookup instead of allocating it once per quest.
+- Keep only the most recent inventory tooltip lookup instead of indexing every stored item; preserve character, equipment, and bank totals.
+- Remove per-frame temporary tables from the native tracker minimization check.
+- Add repeatable Lua memory checks for quest data, filtering, and inventory caches.
+- Add `/ztf memory` for an on-demand client memory reading without forcing garbage collection.
+- Add an explicit, out-of-combat `/ztf memory collect` diagnostic to compare startup memory before and after a single cleanup request; never collect automatically.
+
 ## 0.2.5-beta
 
 - Keep inventory snapshots private when generating a fixed settings fallback, so loading a preset cannot overwrite current item tracking.

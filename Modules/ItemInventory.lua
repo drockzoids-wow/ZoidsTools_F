@@ -4,7 +4,7 @@ local L = ns.L or setmetatable({}, { __index = function(_, key) return key end }
 
 local initialized, bankOpen, queued, currentKey
 local dirtyBags, dirtyBank = true, false
-local itemIndex
+local cachedID, cachedEntry
 local worldActive, loggingOut = true, false
 
 local function IsSecret(value)
@@ -138,7 +138,7 @@ local function ScanBank(target, bankType, account)
 end
 
 local function Notify()
-    itemIndex = nil
+    cachedID, cachedEntry = nil, nil
 end
 
 local function Capture()
@@ -168,27 +168,27 @@ local function Queue()
     if C_Timer and C_Timer.After then C_Timer.After(0.2, Run) else Run() end
 end
 
-local function GetIndex()
-    if itemIndex then return itemIndex end
-    itemIndex = {}
+local function GetEntry(id)
+    if cachedID == id then return cachedEntry end
+    -- Look up only the requested item in each container. Retain one result,
+    -- rather than duplicating every character's entire inventory in an index.
+    local entry
     local function Add(containers, key, owner, class)
         for containerKey, snapshot in pairs(containers) do
-            for id, item in pairs(snapshot.items) do
-                if item.count > 0 then
-                    local entry = itemIndex[id] or { id = id, count = 0, locations = {} }
-                    entry.name = entry.name or item.name
-                    entry.count = entry.count + item.count
-                    -- Merge bag counts for each character, retain distinct bank tabs.
-                    local locationKey = key .. ":" .. snapshot.label
-                    local location = entry.locations[locationKey] or {
-                        key = key, owner = owner, class = class, label = snapshot.label,
-                        count = 0, kind = containerKey == "equipped" and "Equipped"
-                            or containerKey:match("^bag") and "Bags" or "Bank",
-                    }
-                    location.count = location.count + item.count
-                    entry.locations[locationKey] = location
-                    itemIndex[id] = entry
-                end
+            local item = snapshot.items[id]
+            if item and item.count > 0 then
+                entry = entry or { id = id, count = 0, locations = {} }
+                entry.name = entry.name or item.name
+                entry.count = entry.count + item.count
+                -- Merge bag counts for each character, retain distinct bank tabs.
+                local locationKey = key .. ":" .. snapshot.label
+                local location = entry.locations[locationKey] or {
+                    key = key, owner = owner, class = class, label = snapshot.label,
+                    count = 0, kind = containerKey == "equipped" and "Equipped"
+                        or containerKey:match("^bag") and "Bags" or "Bank",
+                }
+                location.count = location.count + item.count
+                entry.locations[locationKey] = location
             end
         end
     end
@@ -196,11 +196,12 @@ local function GetIndex()
         Add(character.containers, key, character.name .. "-" .. character.realm, character.class)
     end
     Add(DB().account, "account", "Warband", nil)
-    return itemIndex
+    cachedID, cachedEntry = id, entry
+    return entry
 end
 
 function ns:GetWarbandItemLocations(id)
-    local entry = GetIndex()[id]
+    local entry = GetEntry(id)
     local locations = {}
     for _, location in pairs(entry and entry.locations or {}) do locations[#locations + 1] = location end
     table.sort(locations, function(a, b)

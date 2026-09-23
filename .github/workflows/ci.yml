@@ -24,6 +24,8 @@ jobs:
         run: python Tests/smoke.py
       - name: Check Completionist and migration
         run: python Tests/completionist.py
+      - name: Check Lua memory budgets
+        run: python Tests/memory.py
       - name: Validate addon packaging without an archive
         run: python Tools/package.py --validate-only
       - name: Test CurseForge destination checks

@@ -2,7 +2,7 @@
 ## Title: ZoidsTools Forever Recovery
 ## Notes: Automatic settings snapshot companion for ZoidsTools Forever.
 ## Author: Drockzoids
-## Version: 0.2.5-beta
+## Version: 0.2.6-beta
 ## SavedVariables: ZoidsTools_FRecoveryDB, ZoidsTools_FRecoveryPresetDB
 
 Recovery.lua

@@ -20,9 +20,8 @@ local function Restore(region)
     suppressed[region] = nil
 end
 
-local function Suppress(region, active)
+local function Suppress(region)
     if not region or not region.GetAlpha or not region.SetAlpha then return end
-    active[region] = true
     local alpha = Read(region.GetAlpha, region)
     if type(alpha) ~= "number" then return end
     if suppressed[region] == nil or alpha ~= 0 then suppressed[region] = alpha end
@@ -40,16 +39,16 @@ function ns:RefreshTrackerMinimize()
     local minimized = self:GetTrackerMinimizeToButton() and header and header.MinimizeButton
         and Read(tracker.IsCollapsed, tracker) == true
         and not (editMode and Read(editMode.IsEditModeActive, editMode) == true)
-    local active = {}
     if minimized then
         -- Cosmetic only: keep the header parent and native +/- button intact.
         -- Resizing or calling tracker layout from addon code can taint its updates.
-        Suppress(header.Text, active)
-        Suppress(header.Background, active)
-        Suppress(tracker.NineSlice, active)
+        Suppress(header.Text)
+        Suppress(header.Background)
+        Suppress(tracker.NineSlice)
     end
     for region in pairs(suppressed) do
-        if not active[region] then Restore(region) end
+        if not minimized or (region ~= header.Text and region ~= header.Background
+            and region ~= tracker.NineSlice) then Restore(region) end
     end
 end
 

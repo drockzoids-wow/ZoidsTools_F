@@ -34,6 +34,7 @@ function ns.RefreshCharacter()
     ns.playerFaction=ns.Call(UnitFactionGroup,"player")
     local _,class=ns.Call(UnitClass,"player");ns.playerClass=class
 end
+local classBits={WARRIOR=1,PALADIN=2,HUNTER=4,ROGUE=8,PRIEST=16,SHAMAN=64,MAGE=128,WARLOCK=256,DRUID=1024}
 function ns.Eligible(q)
     local filter=ns.char.factionFilter
     if filter=="All" then return true end
@@ -41,8 +42,7 @@ function ns.Eligible(q)
     if q.side~=faction and q.side~="Both" then return false end
     if filter=="Mine" then
         local class=ns.playerClass
-        local bits={WARRIOR=1,PALADIN=2,HUNTER=4,ROGUE=8,PRIEST=16,SHAMAN=64,MAGE=128,WARLOCK=256,DRUID=1024}
-        if q.classMask>0 and bits[class] and math.floor(q.classMask/bits[class])%2~=1 then return false end
+        if q.classMask>0 and classBits[class] and math.floor(q.classMask/classBits[class])%2~=1 then return false end
     end
     return true
 end

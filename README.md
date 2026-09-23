@@ -75,6 +75,12 @@ Item tooltips show totals and per-character bag, bank, and equipped counts by de
 Under **Windows & Bags**, use **Back up & reload** after arranging your bags to capture their current position and save all addon settings. **Restore preset** restores that backup and replaces later changes. The recovery companion stores its copy in WoW SavedVariables; addons cannot write into their own folders. If the beta skips loading both saved files, the existing `Save-BetaPreset.ps1` helper can create a fixed fallback.
 
 Lua 5.1 syntax and mocked startup/capability tests are provided in `Tests/smoke.py` (Python with `lupa`).
+Run `/ztf memory` for a fresh main-addon memory reading. Compare shortly after `/reload`, after opening settings and hovering items, and after a minute idle. This command does not force garbage collection; readings include temporary allocations and are not a CPU/FPS measurement. Recovery companions have their own game-reported totals.
+
+To distinguish temporary startup allocations from memory still held after cleanup, run `/ztf memory collect` outside combat. It prints before/after main-addon readings around one Lua cleanup request. The cleanup applies to the whole UI and may briefly pause the game. It runs only when explicitly requested; this is a diagnostic, not an ongoing performance fix. A client or another addon can restrict cleanup, so an unchanged reading alone does not prove a leak.
+
+`python Tests/memory.py` checks retained quest-data memory, inventory cache growth, and quest-filter allocations in Lua 5.1. Add `--compare-ref v0.2.5-beta` to compare with the previous storage format and verify quest fields. These isolated measurements exclude WoW UI objects and your live saved data.
+
 Movement tests also cover window/bag dragging, saved-position restoration, scale limits, enable/disable controls, protected-frame exclusions, combat guards, and late-loaded windows.
 These do not validate Blizzard's actual beta API signatures, secret-value behavior, or visual layout.
 In-game compatibility is pending. If the beta does not expose `C_DamageMeter`, live meters remain unavailable; preview and settings still work.
@@ -107,7 +113,7 @@ On a character with the standalone ZoidsForeverGuide enabled, its settings and d
 
 The quest inventory includes the September 18, 2026 Wowhead Forever snapshot and three verified Zephras Isle encounters. Approximate observed NPC positions remain tooltip information, not exact map pins.
 
-Validate release inputs without creating a ZIP: `python Tools/package.py --tag v0.2.5-beta --validate-only`.
+Validate release inputs without creating a ZIP: `python Tools/package.py --tag v0.2.6-beta --validate-only`.
 
 
 ### Beta recovery limitation confirmed in game
