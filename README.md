@@ -70,6 +70,10 @@ Castbar preview is experimental on Forever. It uses `isInEditMode` plus `UpdateS
 
 Preview ends on leaving the Castbars page, changing the selected bar or target/focus, starting a cast/channel, or entering combat. Visibility cleanup blocked by combat is completed afterward. Full Edit Mode takes ownership of its own previews; addon size changes are paused while it is open. Test normal casts/channels after closing a preview and after combat, and check size persistence after `/reload`.
 
+Item tooltips show totals and per-character bag, bank, and equipped counts by default. Toggle them under Tooltips. Log into each character and visit each bank to record inventory; offline characters and closed banks show their last recorded counts. Shared banks are counted once when supported. Inventory is saved separately from settings presets and is limited to characters on this WoW account/client installation.
+
+Under **Windows & Bags**, use **Back up & reload** after arranging your bags to capture their current position and save all addon settings. **Restore preset** restores that backup and replaces later changes. The recovery companion stores its copy in WoW SavedVariables; addons cannot write into their own folders. If the beta skips loading both saved files, the existing `Save-BetaPreset.ps1` helper can create a fixed fallback.
+
 Lua 5.1 syntax and mocked startup/capability tests are provided in `Tests/smoke.py` (Python with `lupa`).
 Movement tests also cover window/bag dragging, saved-position restoration, scale limits, enable/disable controls, protected-frame exclusions, combat guards, and late-loaded windows.
 These do not validate Blizzard's actual beta API signatures, secret-value behavior, or visual layout.
@@ -103,7 +107,7 @@ On a character with the standalone ZoidsForeverGuide enabled, its settings and d
 
 The quest inventory includes the September 18, 2026 Wowhead Forever snapshot and three verified Zephras Isle encounters. Approximate observed NPC positions remain tooltip information, not exact map pins.
 
-Validate release inputs without creating a ZIP: `python Tools/package.py --tag v0.2.4-beta --validate-only`.
+Validate release inputs without creating a ZIP: `python Tools/package.py --tag v0.2.5-beta --validate-only`.
 
 
 ### Beta recovery limitation confirmed in game

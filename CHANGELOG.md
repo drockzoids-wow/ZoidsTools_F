@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.2.5-beta
+
+- Keep inventory snapshots private when generating a fixed settings fallback, so loading a preset cannot overwrite current item tracking.
+
+- Add Back up & reload and Restore preset buttons to Windows & Bags, with saved bag-anchor status. Explicit backups capture the visible bag layout; reload/logout finishes active drags. Immediately snapshot layout edits and recover newer positions/scales from recovery saves or presets even when the main save is nonempty but stale; newer intentional resets remain respected.
+
+- Add default-on item tooltip totals and class-colored character rows with bag, bank, and equipped counts, adapted from ZoidsTools. Record each character on login and banks on visits; support legacy banks and modern shared banks without double-counting. Keep inventory snapshots separate from settings presets. Toggle under Tooltips; new text falls back to English.
+
 ## 0.2.4-beta
 
 - Add a Windows Save-BetaPreset.ps1 helper for the confirmed beta failure to load either SavedVariables file. It creates a private fixed-file companion from an explicitly saved preset, backs up previous fallback files, and never modifies WTF files. Release packages include the helper, never generated personal settings.

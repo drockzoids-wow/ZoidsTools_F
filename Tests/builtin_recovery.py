@@ -125,6 +125,42 @@ def check_builtin_recovery(LuaRuntime):
         assert(messages[#messages]:find('No saved preset was loaded',1,true))
     """)
     print('PASS: separate preset survives loss of all main tables without private preset addon; snapshots preserve explicit preset')
+    # A stale but nonempty main save and main backup must not defeat the companion.
+    layout = start('''ZoidsTools_FDB={windows={layoutRevision=1,moveBags=false},stats={x=77}}
+        ZoidsTools_FBackupDB={windows={layoutRevision=2,bagAnchor={point="BOTTOMRIGHT",x=200,y=100}}}''',
+        '''ZoidsTools_FRecoveryDB={windows={layoutRevision=3,bagAnchorCorner="BOTTOMRIGHT",
+        bagAnchor={point="BOTTOMRIGHT",x=800,y=150},points={},scales={ContainerFrame1=1.25}}}''')
+    layout.execute('''
+        assert(ns.windowLayoutRecoveryUsed and ns.db.windows.bagAnchor.x==800)
+        assert(ns.db.windows.scales.ContainerFrame1==1.25)
+        assert(ns.db.windows.moveBags==false and ns.db.stats.x==77)
+    ''')
+    login(layout)
+    layout.execute('''
+        captured=0
+        function ns:CaptureCurrentWindowLayout(onlyMoving)
+            captured=captured+1
+            self.db.windows.bagAnchor.x=onlyMoving and 920 or 910
+        end
+        ZoidsTools_FRecoveryService:SavePreset()
+        assert(captured==1 and ZoidsTools_FPresetDB.windows.bagAnchor.x==910)
+        assert(ZoidsTools_FRecoveryPresetDB.windows.bagAnchor.x==910)
+        fire('PLAYER_LOGOUT')
+        assert(captured==2 and ZoidsTools_FRecoveryDB.windows.bagAnchor.x==920)
+        assert(ZoidsTools_FRecoveryPresetDB.windows.bagAnchor.x==910)
+    ''')
+    saved_layout = layout.eval("'ZoidsTools_FDB='..serialize(ZoidsTools_FDB)..'\\nZoidsTools_FBackupDB='..serialize(ZoidsTools_FBackupDB)")
+    for _ in range(3):
+        fresh = start(saved_layout)
+        fresh.execute('assert(ns.db.windows.bagAnchor.x==920 and ns.db.windows.layoutRevision==3)')
+        saved_layout = fresh.eval("'ZoidsTools_FDB='..serialize(ZoidsTools_FDB)")
+    reset = start('ZoidsTools_FDB={windows={layoutRevision=5,points={},scales={}}}',
+        'ZoidsTools_FRecoveryDB={windows={layoutRevision=3,bagAnchor={point="BOTTOMRIGHT",x=800,y=150}}}')
+    reset.execute('assert(ns.db.windows.bagAnchor==nil and not ns.windowLayoutRecoveryUsed)')
+    recovered_reset = start('ZoidsTools_FDB={windows={layoutRevision=1,bagAnchor={point="BOTTOMRIGHT",x=800,y=150}}}',
+        'ZoidsTools_FRecoveryDB={windows={layoutRevision=4,points={},scales={}}}')
+    recovered_reset.execute('assert(ns.db.windows.bagAnchor==nil and ns.windowLayoutRecoveryUsed)')
+    print('PASS: latest window layout recovery, unrelated settings preserved, newer resets respected, preset capture before backup, logout capture, and three fresh reloads')
     print('PASS: built-in backups without companions, personal restore point, positions across fresh reloads, missing-main restore, legacy import and companion removal, optional separate-file mirroring')
 
     ui=LuaRuntime(unpack_returned_tuples=True)
@@ -161,3 +197,26 @@ def check_builtin_recovery(LuaRuntime):
         f.restoreButton.scripts.OnClick();assert(restores==1)
     """)
     print('PASS: reminder does not auto-save/restore, Later dismisses, absent preset disables restore, combat guards and failed-save reload prevention')
+    ui.execute('''
+        ns.db.windows={enabled=true,moveBags=true,savePositions=true,points={},scales={}}
+        ns.GetBagAnchorCorner=function()return 'BOTTOMRIGHT' end
+        ns.GetMovableWindowStats=function()return 2,3,0 end
+        ZoidsTools_FRecoveryService.GetPresetSaveWarning=nil
+        ZoidsTools_FRecoveryService.GetPreset=function()return {windows={}} end
+        saves=0;reloads=0;restores=0
+    ''')
+    ui.execute((root/'UI/Windows.lua').read_text(encoding='utf-8'),'ZoidsTools_F',host)
+    ui.execute('''
+        local page=ns.UI.CreateWindowsPage(UIParent)
+        page:Refresh()
+        assert(page.backupButton.enabled and page.restoreButton.enabled and saves==0)
+        page.backupButton.scripts.OnClick();assert(saves==1 and reloads==1)
+        combat=true;page:Refresh();assert(not page.backupButton.enabled)
+        page.backupButton.scripts.OnClick();assert(saves==1)
+        combat=false;saveOK=false
+        page.backupButton.scripts.OnClick();assert(reloads==1)
+        page.restoreButton.scripts.OnClick();assert(restores==1)
+        ZoidsTools_FRecoveryService.GetPresetSaveWarning=function()return 'Outdated Recovery' end
+        page.backupButton.scripts.OnClick();assert(saves==2 and reloads==1)
+    ''')
+    print('PASS: Windows & Bags backup/restore buttons, no implicit save, combat guards, failed-save and outdated-companion reload prevention')

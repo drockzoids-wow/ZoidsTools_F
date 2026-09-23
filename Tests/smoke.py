@@ -128,6 +128,17 @@ for legacy in [False, True]:
     tooltip_lua.execute((root / 'Modules/PlayerTooltip.lua').read_text(encoding='utf-8'), 'ZoidsTools_F', tooltip_ns)
     tooltip_lua.globals().RunTooltipTests(tooltip_ns, legacy)
 print('PASS: retail/legacy tooltip colors, custom class colors, NPC exclusion, settings, restoration, and restricted data')
+for legacy in [False, True]:
+    inventory_lua = LuaRuntime(unpack_returned_tuples=True)
+    inventory_lua.execute((root / 'Tests/inventory.lua').read_text(encoding='utf-8'))
+
+    def load_inventory():
+        ns = inventory_lua.eval('{ db = { tooltips = { itemCounts = true } } }')
+        inventory_lua.execute((root / 'Modules/ItemInventory.lua').read_text(encoding='utf-8'), 'ZoidsTools_F', ns)
+        return ns
+
+    inventory_lua.globals().RunInventoryTests(load_inventory(), legacy, load_inventory)
+print('PASS: cross-character item tooltips, shared and legacy banks, reload persistence, empty/restricted storage, combat, loading screens, logout, and tooltip toggle/deduplication')
 loot_lua = LuaRuntime(unpack_returned_tuples=True)
 loot_lua.execute((root / 'Tests/fastloot.lua').read_text(encoding='utf-8'))
 loot_ns = loot_lua.eval('{ db = { loot = { fastLoot = true, slotDelay = 0 } } }')

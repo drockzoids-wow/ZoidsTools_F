@@ -391,6 +391,13 @@ local function BagScale(frame)
     local scale = frame.GetEffectiveScale and frame:GetEffectiveScale() or (frame.GetScale and frame:GetScale()) or 1
     return scale / parentScale
 end
+function ns:PersistWindowLayout()
+    if not self.db or not self.db.windows then return end
+    local revision = self.db.windows.layoutRevision
+    if type(revision) ~= "number" or revision < 0 or revision >= math.huge or revision ~= revision then revision = 0 end
+    self.db.windows.layoutRevision = revision + 1
+    if ZoidsTools_FRecoveryService then ZoidsTools_FRecoveryService:Capture() end
+end
 local function CaptureBagAnchor(frame, corner)
     if not frame or CombatBlocksMovement(frame,true) then return false end
     local xMethod = corner:find("RIGHT",1,true) and frame.GetRight or frame.GetLeft
@@ -401,7 +408,7 @@ local function CaptureBagAnchor(frame, corner)
     if not okX or not okY or type(x)~="number" or type(y)~="number" then return false end
     local scale = BagScale(frame)
     ns.db.windows.bagAnchor = {point=corner,x=x*scale,y=y*scale}
-    if ZoidsTools_FRecoveryService then ZoidsTools_FRecoveryService:Capture() end
+    ns:PersistWindowLayout()
     return true
 end
 function ns:GetBagAnchorCorner()
@@ -418,7 +425,7 @@ function ns:SetBagAnchorCorner(corner)
     end
     self.db.windows.bagAnchorCorner = corner
     if base and self.db.windows.savePositions then CaptureBagAnchor(base,corner) end
-    if ZoidsTools_FRecoveryService then ZoidsTools_FRecoveryService:Capture() end
+    self:PersistWindowLayout()
     if RefreshBagsSoon then RefreshBagsSoon() end
 end
 
@@ -477,6 +484,33 @@ local function SavePoint(frame, isBagWindow)
         x = x,
         y = y,
     }
+    ns:PersistWindowLayout()
+end
+
+-- Explicit backups capture the visible base bag, never each stacked bag in turn.
+-- At logout only finish active drags; normal restore/layout hooks must not save.
+function ns:CaptureCurrentWindowLayout(onlyMoving)
+    if not self.db or not self.db.windows.enabled or not self.db.windows.savePositions then return end
+    local movingBag
+    for frame in pairs(bagFrames) do
+        if frame.ZTMoving and not CombatBlocksMovement(frame, true) then
+            SafeCall(frame.StopMovingOrSizing, frame)
+            frame.ZTMoving = nil
+            SavePoint(frame, true)
+            movingBag = true
+        end
+    end
+    if not onlyMoving and not movingBag and self.db.windows.moveBags then
+        local base = BagBase()
+        if base then SavePoint(base, true) end
+    end
+    for frame in pairs(movableFrames) do
+        if frame.ZTMoving and not CombatBlocksMovement(frame, false) then
+            SafeCall(frame.StopMovingOrSizing, frame)
+            frame.ZTMoving = nil
+            SavePoint(frame, false)
+        end
+    end
 end
 
 local function HasSavedPoint(frame, isBagWindow)
@@ -542,6 +576,7 @@ local function ApplyScale(frame, scale, save, isBagWindow)
     if save then
         ns.db.windows.scales = ns.db.windows.scales or {}
         ns.db.windows.scales[name] = scale
+        ns:PersistWindowLayout()
     end
 
     frame.ZTApplyingScale = true
@@ -658,6 +693,7 @@ local function ResetFrameScale(frame, notify, isBagWindow)
 
     if ns.db.windows.scales then
         ns.db.windows.scales[name] = nil
+        ns:PersistWindowLayout()
     end
 
     frame.ZTApplyingScale = true
@@ -830,6 +866,7 @@ local function ResetFramePosition(frame, notify, useOriginalPoint)
     end
 
     if isBagWindow and CarriedBag(frame) then ns.db.windows.bagAnchor = nil end
+    ns:PersistWindowLayout()
     if useOriginalPoint == "bag" and not InCombatLockdown() then
         SetManagedPlacement(frame, false)
         RelayoutContainerFrames()
@@ -1585,6 +1622,8 @@ function ns:ResetMovableWindowPositions()
 
     ResetWorldMapPosition()
 
+    self:PersistWindowLayout()
+
     self:Print(L["Saved window positions reset."])
 end
 
@@ -1599,6 +1638,7 @@ function ns:ResetMovableWindowScales()
 
     self.db.windows.scales = self.db.windows.scales or {}
     wipe(self.db.windows.scales)
+    self:PersistWindowLayout()
 
     for frame in pairs(movableFrames) do
         ResetFrameScale(frame, false)

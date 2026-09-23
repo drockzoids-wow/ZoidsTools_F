@@ -1,4 +1,4 @@
-local addonName = ...
+local addonName, ns = ...
 -- Always available in the main addon. The optional companion supplies a separate disk file.
 local companion = ZoidsTools_FRecoveryService
 local recovery = {}
@@ -37,6 +37,7 @@ function recovery:GetPreset()
 end
 function recovery:SavePreset()
     if not loaded or not Present(source) then return false end
+    if ns and ns.CaptureCurrentWindowLayout then ns:CaptureCurrentWindowLayout() end
     ZoidsTools_FPresetDB = Copy(source)
     ZoidsTools_FRecovery = Copy(ZoidsTools_FPresetDB)
     if companion and companion.SavePreset then companion:SavePreset(ZoidsTools_FPresetDB) end
@@ -79,6 +80,7 @@ events:SetScript("OnEvent", function(_, event, name)
             end
         end
     elseif event == "PLAYER_LOGOUT" then
+        if ns and ns.CaptureCurrentWindowLayout then ns:CaptureCurrentWindowLayout(true) end
         recovery:Capture()
     end
 end)

@@ -2,7 +2,7 @@ local addonName, ns = ...
 local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
 ns.addonName = addonName
 ns.title = "ZoidsTools Forever"
-ns.version = "0.2.4-beta"
+ns.version = "0.2.5-beta"
 
 local defaults = {
     reputation = { autoZone = true },
@@ -12,7 +12,7 @@ local defaults = {
     macros = { healthEnabled = false, healthCombatItems = true, manaEnabled = false, manaCombatPotion = true },
     quests = { autoAccept = false, autoTurnIn = false, pauseModifier = "shift", minimizeTracker = true },
     loot = { fastLoot = true, slotDelay = 0 },
-    tooltips = { classColoredNames = true },
+    tooltips = { classColoredNames = true, itemCounts = true },
     vendor = { autoSellJunk = false, autoRepairMode = "disabled" },
     unitFrames = { classColorHealth = false },
     castbars = {
@@ -98,6 +98,27 @@ events:SetScript("OnEvent", function(_, event, name)
             ZoidsTools_FDB.macros = restoredMacros
             ns.macroSettingsRecoveryUsed = true
         end
+        -- Recover only layout data; keep unrelated settings from a valid main save.
+        local function LayoutRevision(settings)
+            local value = type(settings) == "table" and settings.layoutRevision
+            return type(value) == "number" and value >= 0 and value < math.huge and value or 0
+        end
+        local backupWindows = type(recovery) == "table" and recovery.windows
+        -- The main backup can itself be stale; consider the separate companion too.
+        for _, candidate in pairs({ ZoidsTools_FRecovery, ZoidsTools_FPresetDB,
+            ZoidsTools_FRecoveryDB, ZoidsTools_FRecoveryPresetDB }) do
+            local windows = type(candidate) == "table" and candidate.windows
+            if LayoutRevision(windows) > LayoutRevision(backupWindows) then backupWindows = windows end
+        end
+        if LayoutRevision(backupWindows) > LayoutRevision(ZoidsTools_FDB.windows) then
+            local restored = {}
+            ApplyDefaults(restored, backupWindows)
+            if type(ZoidsTools_FDB.windows) ~= "table" then ZoidsTools_FDB.windows = {} end
+            for _, key in ipairs({ "points", "scales", "bagAnchor", "bagAnchorCorner", "layoutRevision" }) do
+                ZoidsTools_FDB.windows[key] = restored[key]
+            end
+            ns.windowLayoutRecoveryUsed = true
+        end
         local trackerBackup = type(recovery) == "table" and recovery.completionistTracker
         if type(trackerBackup) == "table" and (type(ZoidsTools_FDB.completionistTracker) ~= "table" or
             MacroRevision(trackerBackup) > MacroRevision(ZoidsTools_FDB.completionistTracker)) then
@@ -112,6 +133,7 @@ events:SetScript("OnEvent", function(_, event, name)
         ns:InitializeMovableWindows()
         ns:InitializeUnitFrames()
         ns:InitializePlayerTooltip()
+        ns:InitializeWarbandItems()
         ns:InitializeActionButtonRange()
         ns:InitializeCampfireBar()
         ns:InitializeConsumableMacros()

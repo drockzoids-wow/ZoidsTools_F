@@ -65,7 +65,7 @@ foreach ($path in @($presetPath, $tocPath)) {
 }
 # SavedVariables are Lua assignments; keep their tables local so the fallback
 # does not replace a normally loaded main save. Only expose the chosen preset.
-$lua = "-- Private generated preset. Do not publish this file.`nlocal ZoidsTools_FDB, ZoidsTools_FBackupDB, ZoidsTools_FPresetDB`nlocal ZoidsTools_FRecoveryDB, ZoidsTools_FRecoveryPresetDB`n" + $contents + "`nZoidsTools_FRecovery = ZoidsTools_FPresetDB or ZoidsTools_FRecoveryPresetDB`n"
+$lua = "-- Private generated preset. Do not publish this file.`nlocal ZoidsTools_FDB, ZoidsTools_FBackupDB, ZoidsTools_FPresetDB, ZoidsTools_FInventoryDB`nlocal ZoidsTools_FRecoveryDB, ZoidsTools_FRecoveryPresetDB`n" + $contents + "`nZoidsTools_FRecovery = ZoidsTools_FPresetDB or ZoidsTools_FRecoveryPresetDB`n"
 [IO.File]::WriteAllText($presetPath, $lua, $utf8)
 [IO.File]::WriteAllText($tocPath, "## Interface: $interface`n## Title: ZoidsTools Forever Personal Preset`n## Notes: Private beta fallback created from your saved preset.`n## Version: $version`n`nPreset.lua`n", $utf8)
 Write-Host "Created your private fallback in $OutputFolder"
