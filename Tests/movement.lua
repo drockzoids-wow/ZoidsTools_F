@@ -299,24 +299,21 @@ ns:SetBagAnchorCorner('TOPLEFT') -- No visible bag: preserve the existing corner
 assert(ns:GetBagAnchorCorner()=='BOTTOMRIGHT')
 ns:ResetMovableWindowPositions()
 assert(ns.db.windows.bagAnchor==nil)
--- Explicit backups capture the base bag; reload/logout also finishes active drags.
+-- Reload/logout finishes active drags without saving transient bag layouts.
 backpack.shown=true;small.shown=false
 backpack.GetRight=function()return 640 end
-local captures=0
-ZoidsTools_FRecoveryService={Capture=function()captures=captures+1 end}
-local revision=ns.db.windows.layoutRevision
-ns:CaptureCurrentWindowLayout()
-assert(ns.db.windows.bagAnchor.x==640 and ns.db.windows.layoutRevision>revision and captures>0)
+backpack.ZTMoving=true;backpack:StartMoving()
+ns:FinishWindowDrags()
+assert(ns.db.windows.bagAnchor.x==640)
 local savedX=ns.db.windows.bagAnchor.x
 backpack.GetRight=function()return 720 end
-ns:CaptureCurrentWindowLayout(true)
+ns:FinishWindowDrags()
 assert(ns.db.windows.bagAnchor.x==savedX, 'Ordinary logout must not save a transient layout')
 backpack.ZTMoving=true;backpack:StartMoving()
-ns:CaptureCurrentWindowLayout(true)
+ns:FinishWindowDrags()
 assert(not backpack.ZTMoving and not backpack.moving and ns.db.windows.bagAnchor.x==720)
 backpack.shown=false
-ns:CaptureCurrentWindowLayout()
+ns:FinishWindowDrags()
 assert(ns.db.windows.bagAnchor.x==720, 'Hidden bags keep their anchor')
-revision=ns.db.windows.layoutRevision
 ns:ResetMovableWindowPositions()
-assert(ns.db.windows.bagAnchor==nil and ns.db.windows.layoutRevision>revision)
+assert(ns.db.windows.bagAnchor==nil)

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.2.7-beta
+
+- Remove the temporary beta settings recovery system: companion addon, automatic backup snapshots, fixed-preset helper, restore commands, and reminder/save/restore UI. Releases now contain only the main addon.
+- Preserve existing main-addon settings and normal bag/window position and scale saving, shared Completionist layout, and active-drag saving on reload/logout. Old beta backups no longer override current settings.
+
 ## 0.2.6-beta
 
 - Reduce Completionist quest-record memory with compact records while preserving all quest fields and discoveries. Reuse the class filter lookup instead of allocating it once per quest.

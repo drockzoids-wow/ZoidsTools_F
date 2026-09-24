@@ -37,26 +37,10 @@ function UI.CreateWindowsPage(parent)
     resetScales:SetScript("OnClick", function() ns:ResetMovableWindowScales(); page:Refresh() end)
 
     local instructions = UI.CreateBodyText(page,
-        L["Drag a bag's Move handle to set its position. Ctrl + wheel scales; Ctrl + right-click resets.\n\nBack up & reload saves all settings and the visible bag layout. Restore preset replaces changes made since that backup."], 510)
+        L["Drag a bag's Move handle to set its position. Ctrl + wheel scales; Ctrl + right-click resets."], 510)
     instructions:SetPoint("TOPLEFT", 0, -318)
-    local backup = UI.CreateButton(page, L["Back up & reload"], 230, 30)
-    backup:SetPoint("TOPLEFT", 0, -406)
-    backup:SetScript("OnClick", function()
-        if InCombatLockdown() then ns:Print("Back up settings after leaving combat."); return end
-        local service = ZoidsTools_FRecoveryService
-        local warning = service and service.GetPresetSaveWarning and service:GetPresetSaveWarning()
-        if warning then ns:Print(warning); return end
-        if service and service.SavePreset and service:SavePreset() then
-            ns:Print("Current settings and bag layout backed up. Reloading to write the saved files.")
-            if ReloadUI then ReloadUI() end
-        else ns:Print("Settings are not ready to save yet.") end
-    end)
-    local restore = UI.CreateButton(page, L["Restore preset"], 230, 30)
-    restore:SetPoint("LEFT", backup, "RIGHT", 12, 0)
-    restore:SetScript("OnClick", function() SlashCmdList.ZOIDSTOOLS_FOREVER("restorepreset") end)
-    page.backupButton, page.restoreButton = backup, restore
     local status = UI.CreateBodyText(page, "", 510)
-    status:SetPoint("TOPLEFT", 0, -455)
+    status:SetPoint("TOPLEFT", 0, -376)
 
     function page:Refresh()
         for index, control in ipairs(controls) do
@@ -69,14 +53,10 @@ function UI.CreateWindowsPage(parent)
         UI.SetControlEnabled(corner, not combat and ns.db.windows.enabled and ns.db.windows.moveBags)
         UI.SetControlEnabled(resetPositions, not combat)
         UI.SetControlEnabled(resetScales, not combat)
-        local service = ZoidsTools_FRecoveryService
-        local preset = service and service.GetPreset and service:GetPreset()
-        UI.SetControlEnabled(backup, not combat and service ~= nil)
-        UI.SetControlEnabled(restore, not combat and type(preset) == "table" and next(preset) ~= nil)
         local windows, bags, scales = ns:GetMovableWindowStats()
         local anchor = ns.db.windows.bagAnchor
         status:SetText(combat and L["Movement is paused during combat. Changes apply after combat."]
-            or (anchor and string.format(L["Bag position saved: %s (%.0f, %.0f).\nUse Back up & reload to write the current settings to disk."], anchor.point, anchor.x, anchor.y))
+            or (anchor and string.format(L["Bag position saved: %s (%.0f, %.0f)."], anchor.point, anchor.x, anchor.y))
             or string.format(L["Detected: %d windows, %d bags. Saved scales: %d.\nMore windows are detected as you open them."], windows, bags, scales))
     end
     page:RegisterEvent("PLAYER_REGEN_DISABLED")

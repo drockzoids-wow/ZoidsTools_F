@@ -23,10 +23,6 @@ function ns.PrepareCharacter()
     local loaded = C_AddOns and C_AddOns.IsAddOnLoaded or IsAddOnLoaded
     ns.migrationPending = type(loaded) == "function" and loaded("ZoidsForeverGuide") == true
 end
-local function Revision(db)
-    local value = type(db) == "table" and db.revision
-    return type(value) == "number" and value >= 0 and value < math.huge and value or 0
-end
 function ns.LoadTrackerSettings()
     if type(root.db) ~= "table" then return end
     local settings = root.db.completionistTracker
@@ -45,9 +41,7 @@ function ns.SaveTrackerSettings()
         windowPoint = Copy(ns.char.windowPoint),
         locked = ns.char.locked == true,
         minimized = ns.char.minimized == true,
-        revision = Revision(root.db.completionistTracker) + 1,
     }
-    if ZoidsTools_FRecoveryService then ZoidsTools_FRecoveryService:Capture() end
 end
 local migration = CreateFrame("Frame")
 ns.migrationEvents = migration

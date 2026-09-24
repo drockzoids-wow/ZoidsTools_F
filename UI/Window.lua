@@ -8,7 +8,7 @@ local function BuildWindow()
     if window then return window end
     local frame = CreateFrame("Frame", "ZoidsTools_FSettings", UIParent, "BackdropTemplate")
     window = frame
-    frame:SetSize(740, 696)
+    frame:SetSize(740, 598)
     frame:SetPoint("CENTER")
     frame:SetClampedToScreen(true)
     frame:SetMovable(true)
@@ -38,25 +38,9 @@ local function BuildWindow()
     local subtitle = UI.CreateBodyText(frame, L["FOREVER BETA  /  DAMAGE METERS"], 650)
     subtitle:SetPoint("TOPLEFT", 24, -52)
 
-    local reminder = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-    reminder:SetPoint("BOTTOMLEFT", 16, 16)
-    reminder:SetPoint("BOTTOMRIGHT", -16, 16)
-    reminder:SetHeight(82)
-    Theme.ApplySoftBackdrop(reminder)
-    local reminderTitle = reminder:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    reminderTitle:SetPoint("TOPLEFT", 12, -9)
-    reminderTitle:SetText(L["BETA SETTINGS REMINDER"])
-    reminderTitle:SetTextColor(unpack(Theme.colors.gold))
-    local reminderText = UI.CreateBodyText(reminder,
-        L["After setup: /ztf savepreset, then /reload to save it to disk.\nAfter login, if settings reset: /ztf restorepreset to restore and reload.\nRestoring replaces changes made since the saved preset."], 684)
-    reminderText:SetPoint("TOPLEFT", 12, -29)
-    reminderText:SetHeight(48)
-    reminderText:SetWordWrap(true)
-    reminderText:SetJustifyV("TOP")
-
     local sidebar = CreateFrame("Frame", nil, frame, "BackdropTemplate")
     sidebar:SetPoint("TOPLEFT", 16, -82)
-    sidebar:SetPoint("BOTTOMLEFT", 16, 114)
+    sidebar:SetPoint("BOTTOMLEFT", 16, 16)
     sidebar:SetWidth(142)
     Theme.ApplySoftBackdrop(sidebar)
     local selected = UI.CreateButton(sidebar, L["Damage Meters"], 126, 28)
@@ -167,7 +151,6 @@ local function BuildWindow()
     -- Translated paragraphs and navigation labels need more room than English.
     if ns.locale and ns.locale ~= "enUS" then
         frame:SetWidth(900)
-        reminderText:SetWidth(844)
         sidebar:SetWidth(180)
         for _, button in ipairs({ selected, windowsButton, unitFramesButton, castbarsButton,
             vendorButton, tooltipsButton, lootButton, questsButton, actionBarsButton, statsButton, macrosButton, completionistButton }) do

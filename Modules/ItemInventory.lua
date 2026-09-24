@@ -1,6 +1,6 @@
 local _, ns = ...
 local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
--- Inventory snapshots are independent of settings presets and recovery.
+-- Inventory snapshots are stored separately from addon settings.
 
 local initialized, bankOpen, queued, currentKey
 local dirtyBags, dirtyBank = true, false

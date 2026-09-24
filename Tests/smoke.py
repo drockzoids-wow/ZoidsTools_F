@@ -11,11 +11,9 @@ if args.runtime:
     sys.path.insert(0, args.runtime)
 from lupa.lua51 import LuaRuntime
 from persistence import check_persistence
-from builtin_recovery import check_builtin_recovery
 from localization import check_localization
 
 check_persistence(LuaRuntime, args.saved_variables)
-check_builtin_recovery(LuaRuntime)
 check_localization(LuaRuntime)
 
 root = Path(__file__).resolve().parents[1]

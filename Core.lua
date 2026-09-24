@@ -2,7 +2,7 @@ local addonName, ns = ...
 local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
 ns.addonName = addonName
 ns.title = "ZoidsTools Forever"
-ns.version = "0.2.6-beta"
+ns.version = "0.2.7-beta"
 
 local defaults = {
     reputation = { autoZone = true },
@@ -112,73 +112,15 @@ end
 local events = CreateFrame("Frame")
 events:RegisterEvent("ADDON_LOADED")
 events:RegisterEvent("PLAYER_LOGIN")
+events:RegisterEvent("PLAYER_LOGOUT")
 events:SetScript("OnEvent", function(_, event, name)
     if event == "ADDON_LOADED" and name == addonName then
-        local missingSettings = type(ZoidsTools_FDB) ~= "table" or next(ZoidsTools_FDB) == nil
         if type(ZoidsTools_FDB) ~= "table" then ZoidsTools_FDB = {} end
-        local recovery = ZoidsTools_FRecoveryService and ZoidsTools_FRecoveryService:GetSnapshot()
-        ns.settingsStartup = {
-            main = not missingSettings,
-            backup = type(recovery) == "table" and next(recovery) ~= nil,
-            preset = type(ZoidsTools_FRecovery) == "table" and next(ZoidsTools_FRecovery) ~= nil,
-            source = missingSettings and "defaults" or "main save",
-        }
-        -- Retain compatibility with the original local fixed-preset companion.
-        if not recovery then recovery = ZoidsTools_FRecovery end
-        -- Never replace settings the client successfully loaded.
-        if missingSettings and type(recovery) == "table" and next(recovery) then
-            ApplyDefaults(ZoidsTools_FDB, recovery)
-            ns.settingsRecoveryUsed = true
-            ns.settingsStartup.source = ns.settingsStartup.backup and "recovery save" or "local preset"
-            ns:Print(L["Saved settings were missing; restored your recovery snapshot."])
-        end
-        -- A stale but nonempty main save must not overwrite a newer macro choice.
-        -- Revisions are advanced only by explicit macro option changes.
-        local function MacroRevision(settings)
-            local value = type(settings) == "table" and settings.revision
-            return type(value) == "number" and value >= 0 and value < math.huge and value or 0
-        end
-        local backupMacros = type(recovery) == "table" and recovery.macros
-        local presetMacros = type(ZoidsTools_FRecovery) == "table" and ZoidsTools_FRecovery.macros
-        if MacroRevision(presetMacros) > MacroRevision(backupMacros) then backupMacros = presetMacros end
-        if MacroRevision(backupMacros) > MacroRevision(ZoidsTools_FDB.macros) then
-            local restoredMacros = {}
-            ApplyDefaults(restoredMacros, backupMacros)
-            ZoidsTools_FDB.macros = restoredMacros
-            ns.macroSettingsRecoveryUsed = true
-        end
-        -- Recover only layout data; keep unrelated settings from a valid main save.
-        local function LayoutRevision(settings)
-            local value = type(settings) == "table" and settings.layoutRevision
-            return type(value) == "number" and value >= 0 and value < math.huge and value or 0
-        end
-        local backupWindows = type(recovery) == "table" and recovery.windows
-        -- The main backup can itself be stale; consider the separate companion too.
-        for _, candidate in pairs({ ZoidsTools_FRecovery, ZoidsTools_FPresetDB,
-            ZoidsTools_FRecoveryDB, ZoidsTools_FRecoveryPresetDB }) do
-            local windows = type(candidate) == "table" and candidate.windows
-            if LayoutRevision(windows) > LayoutRevision(backupWindows) then backupWindows = windows end
-        end
-        if LayoutRevision(backupWindows) > LayoutRevision(ZoidsTools_FDB.windows) then
-            local restored = {}
-            ApplyDefaults(restored, backupWindows)
-            if type(ZoidsTools_FDB.windows) ~= "table" then ZoidsTools_FDB.windows = {} end
-            for _, key in ipairs({ "points", "scales", "bagAnchor", "bagAnchorCorner", "layoutRevision" }) do
-                ZoidsTools_FDB.windows[key] = restored[key]
-            end
-            ns.windowLayoutRecoveryUsed = true
-        end
-        local trackerBackup = type(recovery) == "table" and recovery.completionistTracker
-        if type(trackerBackup) == "table" and (type(ZoidsTools_FDB.completionistTracker) ~= "table" or
-            MacroRevision(trackerBackup) > MacroRevision(ZoidsTools_FDB.completionistTracker)) then
-            local restored = {}
-            ApplyDefaults(restored, trackerBackup)
-            ZoidsTools_FDB.completionistTracker = restored
-        end
         ApplyDefaults(ZoidsTools_FDB, defaults)
         ns.db = ZoidsTools_FDB
+    elseif event == "PLAYER_LOGOUT" then
+        if ns.FinishWindowDrags then ns:FinishWindowDrags() end
     elseif event == "PLAYER_LOGIN" then
-        if ZoidsTools_FRecoveryService then ZoidsTools_FRecoveryService:Start(ns.db) end
         ns:InitializeMovableWindows()
         ns:InitializeUnitFrames()
         ns:InitializePlayerTooltip()
@@ -245,41 +187,6 @@ SlashCmdList.ZOIDSTOOLS_FOREVER = function(message)
         ns:ReportMemory()
     elseif command == "memory collect" then
         ns:ReportMemory(true)
-    elseif command == "savepreset" then
-        local service = ZoidsTools_FRecoveryService
-        local warning = service and service.GetPresetSaveWarning and service:GetPresetSaveWarning()
-        if warning then ns:Print(warning); return end
-        if ZoidsTools_FRecoveryService and ZoidsTools_FRecoveryService:SavePreset() then
-            ns:Print("Personal restore point saved. Use /reload to write it to disk; /ztf restorepreset restores it.")
-        end
-    elseif command == "restorepreset" then
-        local service = ZoidsTools_FRecoveryService
-        local preset = service and service.GetPreset and service:GetPreset() or ZoidsTools_FRecovery
-        if type(preset) ~= "table" or not next(preset) then
-            ns:Print("No saved preset was loaded. If you already saved one, the beta may have skipped loading it. Run Save-BetaPreset.ps1 from the addon folder to create a fixed fallback from the saved file; do not save over your good preset with defaults.")
-            return
-        end
-        if InCombatLockdown and InCombatLockdown() then
-            ns:Print(L["Restore your preset after leaving combat."])
-            return
-        end
-        if not ReloadUI then return end
-        -- Explicit user command: replace settings, including a nonempty reset save.
-        local restored = {}
-        ApplyDefaults(restored, preset)
-        ApplyDefaults(restored, defaults)
-        ZoidsTools_FDB = restored
-        ns.db = restored
-        if ZoidsTools_FRecoveryService then ZoidsTools_FRecoveryService:Start(restored) end
-        ReloadUI()
-    elseif command == "recovery" then
-        local startup = ns.settingsStartup
-        if startup then
-            ns:Print(string.format(L["Settings at startup: main=%s, backup=%s, local preset=%s; using %s."],
-                startup.main and L["present"] or L["missing"], startup.backup and L["present"] or L["missing"],
-                startup.preset and L["present"] or L["missing"], ns.L and ns.L[startup.source] or startup.source))
-            ns:Print("Disk saves happen on reload/logout. If all sources are missing after saving, run Save-BetaPreset.ps1 outside WoW to create a fixed fallback. Saved copies alone cannot bypass the beta loading bug.")
-        end
     elseif command == "preview" then
         ns:ToggleCustomDamageMeterMoveMode()
     elseif command == "on" or command == "off" then

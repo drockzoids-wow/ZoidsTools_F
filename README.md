@@ -1,6 +1,6 @@
 # ZoidsTools Forever
 
-**A separate addon for WoW: Forever beta.** Install `ZoidsTools_F` and its `ZoidsTools_F_Recovery` companion, into `Interface/AddOns`; this does not replace the retail `ZoidsTools` addon. Saved settings use `ZoidsTools_FDB`, with built-in backup and personal restore-point tables. This project has its own Git repository and does not use the retail CurseForge project.
+**A separate addon for WoW: Forever beta.** Install `ZoidsTools_F` into `Interface/AddOns`; this does not replace the retail `ZoidsTools` addon. Saved settings use `ZoidsTools_FDB`, with normal position and scale persistence. This project has its own Git repository and does not use the retail CurseForge project.
 
 For the first GitHub upload, follow [GITHUB_SETUP.md](GITHUB_SETUP.md). For development and releases, see [CONTRIBUTING.md](CONTRIBUTING.md) and [CHANGELOG.md](CHANGELOG.md).
 
@@ -40,7 +40,7 @@ Automatically uses your WoW client language, with English fallback. All 244 disp
 
 ## Install and use
 
-Install both release folders, `ZoidsTools_F` and `ZoidsTools_F_Recovery`, into `Interface/AddOns`. For a source checkout, place or link this project there as `ZoidsTools_F`. Keep the recovery companion enabled during beta; see the confirmed limitation below.
+Install the `ZoidsTools_F` release folder into `Interface/AddOns`. For a source checkout, place or link this project there as `ZoidsTools_F`.
 Restart the client if it was open when the addon was first installed.
 
 - `/ztf` (or `/zt`) opens settings; `/zoidsforever` also works.
@@ -62,7 +62,7 @@ The retail ZoidsTools addon is not required; its files and saved settings are no
 
 Quest automation is opt-in under `/ztf quests`, with independent Auto Accept and Auto Turn-in toggles. Hold Shift (or select Ctrl, Alt, or None) to pause at each quest stage. Turn-in claims zero/one-choice rewards and leaves multiple choices for manual handling. Supports the modern gossip quest list and classic quest greetings. Test acceptance, a completed quest, a reward-choice quest, and your pause key in game.
 
-Fast Loot is enabled by default and follows Blizzard's Auto Loot setting and modifier. Open `/ztf loot` to disable it or choose 0–200 ms between item requests in 1 ms steps. Drag the slider or use the mouse wheel over it for precise adjustment; the label shows seconds and milliseconds. It attempts each slot once per opening, with no second pass. Actual pickup timing depends on the server and Blizzard's own looting behavior. Test with several items, the Auto Loot modifier, and closing loot mid-pickup.
+Fast Loot is enabled by default and follows Blizzard's Auto Loot setting and modifier. Open `/ztf loot` to disable it or choose 0â€“200 ms between item requests in 1 ms steps. Drag the slider or use the mouse wheel over it for precise adjustment; the label shows seconds and milliseconds. It attempts each slot once per opening, with no second pass. Actual pickup timing depends on the server and Blizzard's own looting behavior. Test with several items, the Auto Loot modifier, and closing loot mid-pickup.
 
 Player tooltip names use class colors by default, matching retail ZoidsTools. Open `/ztf tooltips` to toggle this. The module supports the retail line-data callback and an older-client tooltip fallback. Verify player and NPC hovers plus item tooltips in game after `/reload`; the automated tests cover color selection and fallback cleanup, but cannot verify the beta's rendering.
 
@@ -72,10 +72,10 @@ Preview ends on leaving the Castbars page, changing the selected bar or target/f
 
 Item tooltips show totals and per-character bag, bank, and equipped counts by default. Toggle them under Tooltips. Log into each character and visit each bank to record inventory; offline characters and closed banks show their last recorded counts. Shared banks are counted once when supported. Inventory is saved separately from settings presets and is limited to characters on this WoW account/client installation.
 
-Under **Windows & Bags**, use **Back up & reload** after arranging your bags to capture their current position and save all addon settings. **Restore preset** restores that backup and replaces later changes. The recovery companion stores its copy in WoW SavedVariables; addons cannot write into their own folders. If the beta skips loading both saved files, the existing `Save-BetaPreset.ps1` helper can create a fixed fallback.
+Under **Windows & Bags**, keep **Remember window positions** enabled. Positions and scales save normally on reload/logout.
 
 Lua 5.1 syntax and mocked startup/capability tests are provided in `Tests/smoke.py` (Python with `lupa`).
-Run `/ztf memory` for a fresh main-addon memory reading. Compare shortly after `/reload`, after opening settings and hovering items, and after a minute idle. This command does not force garbage collection; readings include temporary allocations and are not a CPU/FPS measurement. Recovery companions have their own game-reported totals.
+Run `/ztf memory` for a fresh main-addon memory reading. Compare shortly after `/reload`, after opening settings and hovering items, and after a minute idle. This command does not force garbage collection; readings include temporary allocations and are not a CPU/FPS measurement.
 
 To distinguish temporary startup allocations from memory still held after cleanup, run `/ztf memory collect` outside combat. It prints before/after main-addon readings around one Lua cleanup request. The cleanup applies to the whole UI and may briefly pause the game. It runs only when explicitly requested; this is a diagnostic, not an ongoing performance fix. A client or another addon can restrict cleanup, so an unchanged reading alone does not prove a leak.
 
@@ -93,19 +93,15 @@ For movement, open Character, spellbook, merchant, bank, individual bags and com
 
 Adapted from the sibling ZoidsTools project. Retail-only modules are excluded. Upstream libraries and the original license are retained. This first version intentionally has a focused settings window rather than the full retail tool dashboard.
 
-### Automatic settings recovery
+### Saved settings
 
-Recovery is built into ZoidsTools_F for everyone. It snapshots settings, positions, scales and layouts at login, every 10 minutes and on logout/reload. Missing or empty main settings are restored from the backup. Newer macro and Completionist tracker revisions can also recover from stale main values.
+Settings, bag anchors, window positions/scales, and shared tracker layout use the main addon's normal SavedVariables. No backup commands, recovery timer, or beta reminder is needed. Existing main-addon settings are retained.
 
-Use `/ztf savepreset` after arranging your UI to create your own fixed restore point, then `/reload` to write it to disk. `/ztf restorepreset` replaces current settings from that point and reloads; changes since that point are discarded. `/ztf recovery` reports the startup recovery source.
-
-Existing companion backups and private presets import automatically while those addons are enabled. Keep the companions enabled during beta even after import; the live client still needed their independent fallback. No personal layout is distributed in the release.
-
-The main settings, built-in backup and personal restore point are stored in the same `ZoidsTools_F.lua` SavedVariables file. With the bundled Recovery companion enabled, `/ztf savepreset` also stores an independent preset in that companion's separate SavedVariables file. Automatic snapshots do not overwrite this restore point. Restore can use it if the beta fails to load the main file; no private Preset addon is required. Addons cannot force disk writes or rewrite their own source files; reload/logout is required. If the beta fails to load both files, the command cannot recover their contents. A private fixed Lua preset remains a fallback against total SavedVariables loss. Keep external backups during beta.
+The temporary beta Recovery and Personal Preset companions are retired. Leave old companions disabled or remove their separate addon folders; do not delete the main addon's SavedVariables file.
 
 ### Completionist
 
-The tracker position, lock, and minimized state are shared across characters and saved with the main addon settings and recovery snapshot. Quest discoveries remain per-character.
+The tracker position, lock, and minimized state are shared across characters and saved with the main addon settings. Quest discoveries remain per-character.
 
 Open **Completionist** in `/ztf` settings or use `/ztf completionist`. `/ztfc` minimizes/expands the compact 360px tracker. Short filters, area lists, search, full quest tooltips, discovery and NPC details are included. Completion is read from this character's game records; missing data remains Unknown. The source inventory and pickup coverage remain provisional.
 
@@ -113,27 +109,9 @@ On a character with the standalone ZoidsForeverGuide enabled, its settings and d
 
 The quest inventory includes the September 18, 2026 Wowhead Forever snapshot and three verified Zephras Isle encounters. Approximate observed NPC positions remain tooltip information, not exact map pins.
 
-Validate release inputs without creating a ZIP: `python Tools/package.py --tag v0.2.6-beta --validate-only`.
-
-
-### Beta recovery limitation confirmed in game
-
-The current beta can skip loading **both** saved files even when valid settings were written. In that case Save & reload alone cannot make Restore available. The Windows helper `Save-BetaPreset.ps1` is included in the download to create a private fixed Lua fallback, which uses the addon's regular file loader instead.
-
-1. Configure your settings, run `/ztf savepreset`, then `/reload` (or log out) to write them. If they reset, do not save the defaults over your preset.
-2. In Windows, right-click `Save-BetaPreset.ps1` in the ZoidsTools_F addon folder and choose **Run with PowerShell**. If prompted, enter the path to `_classic_beta_` and select your account. This creates `ZoidsTools_F_Preset` beside the main addon. It only uses an explicit saved preset and backs up previous generated files; it never edits your WTF files.
-3. Fully restart WoW after first installation. Keep Personal Preset enabled. Use `/ztf restorepreset` if needed.
-4. When changing your saved setup, repeat save, reload, and the helper before restoring. The fixed fallback does not update itself in game.
-
-If PowerShell blocks the script, review it before choosing to run it; do not change your machine-wide execution policy. A command for a single invocation is `powershell -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\ZoidsTools_F\Save-BetaPreset.ps1"`.
-
-This fallback covers the main addon's settings and shared positions, not per-character quest discovery records. No generated preset is part of the release. This is a beta workaround, not a fix for the client's SavedVariables loader.
-
-Keep the separate `ZoidsTools_F_Recovery` companion during beta; releases include it alongside the main folder. Built-in backups share the main SavedVariables file and did not replace the user's working separate/fixed-file fallback in live testing. Existing private `ZoidsTools_F_Preset` installations should also be retained. `/ztf restorepreset` prefers that fixed local preset when present; otherwise it uses the built-in personal restore point. No personal settings are distributed.
+Validate release inputs without creating a ZIP: `python Tools/package.py --tag v0.2.7-beta --validate-only`.
 
 
 ### Shared bag anchor
 
 Under Windows & Bags, choose **Bag anchor corner** (bottom-right by default). Open the backpack and drag its Move handle to the desired location. Each carried bag uses that same position when open alone; multiple bags retain Blizzard's relative stacking. The combined bag shares this origin, while bank windows retain separate positions. Change corners with a bag open to preserve its current placement. Existing saved backpack/combined positions migrate when first opened. Keep Remember window positions enabled. Protected bag changes wait until combat ends. Ctrl-right-click or Reset all positions clears the shared bag anchor.
-
-A beta reminder appears on login and UI reload. **Save & reload** captures the current settings and writes them through a reload; **Restore preset** replaces settings from the saved preset and reloads. **Later** dismisses the reminder for this session. Save/restore controls are unavailable during combat.

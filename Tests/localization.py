@@ -17,7 +17,7 @@ def check_localization(LuaRuntime):
         for path in sorted((root / 'Locales').glob('*.lua')):
             lua.execute(path.read_text(encoding='utf-8'), 'ZoidsTools_F', ns)
         keys = list(ns.localeKeys.keys())
-        assert len(keys) >= 240
+        assert len(keys) >= 230
         for key in keys:
             value = ns.L[key]
             assert isinstance(value, str) and value, (language, key)
@@ -73,5 +73,5 @@ def check_localization(LuaRuntime):
         assert not re.search(r'(?:==|~=)\s*L\[', source), path
         assert not re.search(r'_G\[[^\n]*L\[', source), path
         assert not re.search(r'CreateFrame\([^\n]*L\[', source), path
-    print('PASS: all 244 strings across 10 translated locales, English/unknown fallback, format arguments, slash commands, localized area detection, stable API identifiers')
+    print(f'PASS: all {len(keys)} strings across 10 translated locales, English/unknown fallback, format arguments, slash commands, localized area detection, stable API identifiers')
     print('PASS: every settings page builds and refreshes with every client locale')

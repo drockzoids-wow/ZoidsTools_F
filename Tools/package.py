@@ -28,36 +28,16 @@ def build(output=None, tag=None, validate_only=False):
                 raise ValueError(f'TOC path escapes addon folder: {line}')
             files.add(path)
     files.update(p for p in (ROOT / 'Media').rglob('*') if p.is_file())
-    files.add(ROOT / 'Save-BetaPreset.ps1')
     for path in files:
         if not path.is_file():
             raise FileNotFoundError(path)
-    companion = 'ZoidsTools_F_Recovery'
-    recovery_toc = ROOT / 'Recovery' / f'{companion}.toc'
-    recovery_text = recovery_toc.read_text(encoding='utf-8-sig')
-    recovery_version = re.search(r'^## Version:\s*(\S+)\s*$', recovery_text, re.MULTILINE).group(1)
-    if recovery_version != version:
-        raise ValueError('Recovery and main addon versions must match')
-    recovery_files = {recovery_toc}
-    for line in recovery_text.splitlines():
-        line = line.strip()
-        if line and not line.startswith('#'):
-            path = (ROOT / 'Recovery' / line.replace('\\', '/')).resolve()
-            if not path.is_relative_to((ROOT / 'Recovery').resolve()):
-                raise ValueError(f'TOC path escapes recovery folder: {line}')
-            recovery_files.add(path)
-    for path in recovery_files:
-        if not path.is_file():
-            raise FileNotFoundError(path)
     if validate_only:
-        return f'Validated {ADDON} v{version} ({len(files) + len(recovery_files)} files); no archive created'
+        return f'Validated {ADDON} v{version} ({len(files)} files); no archive created'
     destination = Path(output) if output else ROOT / 'dist' / f'{ADDON}-{version}.zip'
     destination.parent.mkdir(parents=True, exist_ok=True)
     with ZipFile(destination, 'w', compression=ZIP_DEFLATED) as archive:
         for path in sorted(files):
             archive.write(path, f'{ADDON}/{path.relative_to(ROOT).as_posix()}')
-        for path in sorted(recovery_files):
-            archive.write(path, f'{companion}/{path.relative_to(ROOT / "Recovery").as_posix()}')
     return destination
 
 

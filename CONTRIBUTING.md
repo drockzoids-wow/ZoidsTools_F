@@ -10,12 +10,12 @@ With Python 3.12 installed, run from this folder:
 python -m pip install -r Tests/requirements.txt
 python Tests/smoke.py
 python Tests/package_test.py
-python Tools/package.py
+python Tools/package.py --validate-only
 ```
 
 Tests use Lua 5.1 via Lupa. They are mocked checks; validate UI and combat behavior in the actual client before describing a change as compatible.
 
-The package builder includes the TOC, its Lua load list, artwork, license, README, and changelog under `ZoidsTools_F`, plus the companion TOC and Lua load list from `Recovery` under a sibling `ZoidsTools_F_Recovery` directory. Keep the companion TOC version aligned with the main addon. Personal recovery presets from `build` are never packaged. Add new runtime Lua files to the appropriate TOC. Extend the builder for new runtime resource types. Generated ZIP files stay in the ignored `dist` folder.
+The package builder includes the TOC, its Lua load list, artwork, license, README, and changelog under `ZoidsTools_F`. Local files from `build` are never packaged. Add new runtime Lua files to the appropriate TOC. Extend the builder for new runtime resource types. Generated ZIP files stay in the ignored `dist` folder.
 
 For changes, include a clear description and test results. For bugs, include the addon version, `/ztf status` output, reproduction steps, and any Lua error.
 

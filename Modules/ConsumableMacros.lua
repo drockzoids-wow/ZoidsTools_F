@@ -559,10 +559,6 @@ function ns:SetConsumableMacroOption(key, value)
     local enabled = value == true
     if db[key] ~= enabled then
         db[key] = enabled
-        local revision = type(db.revision) == "number" and db.revision >= 0 and db.revision < math.huge and db.revision or 0
-        db.revision = revision + 1
-        -- Snapshot each explicit choice now, rather than waiting for the timer/logout.
-        if ZoidsTools_FRecoveryService then ZoidsTools_FRecoveryService:Capture() end
     end
     self:RefreshConsumableMacros()
 end

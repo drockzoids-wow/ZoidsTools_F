@@ -5,7 +5,7 @@ from pathlib import Path
 def check_persistence(LuaRuntime, saved_file=None):
     root = Path(__file__).resolve().parents[1]
 
-    def start(saved='', recovery='', bundled=False):
+    def start(saved=''):
         lua = LuaRuntime(unpack_returned_tuples=True)
         lua.execute('''
             frames = {}
@@ -26,11 +26,6 @@ def check_persistence(LuaRuntime, saved_file=None):
                 return ticker
             end }
         ''')
-        if bundled:
-            lua.execute((root / 'Recovery/Recovery.lua').read_text(), 'ZoidsTools_F_Recovery')
-        lua.execute(recovery)
-        if bundled:
-            lua.execute("frames[1].handler(nil, 'ADDON_LOADED', 'ZoidsTools_F_Recovery')")
         ns = lua.table()
         lua.execute((root / 'Core.lua').read_text(encoding='utf-8-sig'), 'ZoidsTools_F', ns)
         lua.execute(saved)  # WoW loads saved variables after addon files, before ADDON_LOADED.
@@ -142,160 +137,16 @@ def check_persistence(LuaRuntime, saved_file=None):
     for _ in range(3):
         lua = start(expected)
         assert snapshot(lua) == expected, 'Saved settings changed during addon loading'
-    recovery = "ZoidsTools_FRecovery={stats={enabled=true,locked=true,x=321,y=-87},vendor={autoSellJunk=true}}"
-    recovered = start(recovery=recovery)
-    recovered.execute("assert(ns.settingsRecoveryUsed and ns.db.stats.x == 321 and ns.db.vendor.autoSellJunk)")
-    baseline = snapshot(recovered)
-    for _ in range(3):
-        assert snapshot(start(recovery=recovery)) == baseline
-    recovered.execute("ns.db.stats.x=999; assert(ZoidsTools_FRecovery.stats.x == 321)")
-    existing = start("ZoidsTools_FDB={stats={x=42,locked=false},vendor={autoSellJunk=false}}", recovery)
-    existing.execute("assert(not ns.settingsRecoveryUsed and ns.db.stats.x == 42 and not ns.db.stats.locked and not ns.db.vendor.autoSellJunk)")
-    empty = start("ZoidsTools_FDB={}", recovery)
-    empty.execute("assert(ns.settingsRecoveryUsed and ns.db.stats.x == 321)")
-    blank = start(recovery='ZoidsTools_FRecovery={}')
-    blank.execute('assert(not ns.settingsRecoveryUsed)')
-    bundled = start("ZoidsTools_FDB={stats={x=42,locked=false}}", bundled=True)
-    bundled.execute('''
-        -- Stub unrelated feature initializers while exercising the real login hook.
-        setmetatable(ns, { __index = function() return function() end end })
-        frames[#frames].handler(nil, 'PLAYER_LOGIN')
-        setmetatable(ns, nil)
-        assert(#tickers == 1 and tickers[1].interval == 600)
-        assert(ZoidsTools_FRecoveryDB.stats.x == 42)
-        ns.db.stats.x = 500
-        ns.db.layouts.example = { nested = { enabled = false, offset = 0 } }
-        assert(ZoidsTools_FRecoveryDB.stats.x == 42)
-        tickers[1].callback()
-        assert(ZoidsTools_FRecoveryDB.stats.x == 500)
-        ns.db.layouts.example.nested.offset = 10
-        assert(ZoidsTools_FRecoveryDB.layouts.example.nested.offset == 0)
-        ns.db.stats.x = 600
-        frames[1].handler(nil, 'PLAYER_LOGOUT')
-        assert(ZoidsTools_FRecoveryDB.stats.x == 600)
-        ZoidsTools_FRecoveryService:Start(ns.db)
-        assert(#tickers == 1)
-    ''')
-    backup = snapshot(bundled, 'ZoidsTools_FRecoveryDB')
-    for missing in ['', 'ZoidsTools_FDB={}', 'ZoidsTools_FDB=false']:
-        restored = start(missing, backup, bundled=True)
-        restored.execute('''
-            assert(ns.settingsRecoveryUsed and ns.db.stats.x == 600)
-            assert(ns.db.layouts.example.nested.enabled == false)
-            ns.db.stats.x = 700
-            assert(ZoidsTools_FRecoveryDB.stats.x == 600)
-        ''')
-    priority = start('ZoidsTools_FDB={stats={x=88}}', backup, bundled=True)
-    priority.execute('assert(not ns.settingsRecoveryUsed and ns.db.stats.x == 88)')
-    priority.execute("assert(ns.settingsStartup.main and ns.settingsStartup.backup and ns.settingsStartup.source == 'main save')")
-    lost = start(bundled=True)
-    lost.execute('''
-        assert(not ns.settingsStartup.main and not ns.settingsStartup.backup)
-        assert(ns.settingsStartup.source == 'defaults')
-        ZoidsTools_FRecoveryService:Start(ns.db)
-        assert(ZoidsTools_FRecoveryDB.stats.locked == false)
-        -- A freshly generated backup must not mask what failed to load.
-        SlashCmdList.ZOIDSTOOLS_FOREVER('recovery')
-        assert(messages[#messages - 1]:find('main=missing, backup=missing', 1, true))
-    ''')
-    preset = start(recovery=recovery, bundled=True)
-    preset.execute('''
-        assert(ns.settingsStartup.source == 'local preset')
-        assert(ns.settingsStartup.preset and not ns.settingsStartup.backup)
-        assert(ns.db.stats.locked and ns.db.stats.x == 321)
-        ZoidsTools_FRecoveryService:Start(ns.db)
-        ns.db.stats.x = 100
-        tickers[1].callback()
-        assert(ZoidsTools_FRecoveryDB.stats.x == 100 and ZoidsTools_FRecovery.stats.x == 321)
-        assert(ns.settingsStartup.source == 'local preset')
-    ''')
-    preferred_backup = start(recovery=backup + '\n' + recovery, bundled=True)
-    preferred_backup.execute("assert(ns.db.stats.x == 600 and ns.settingsStartup.source == 'recovery save')")
-    manual = start('ZoidsTools_FDB={stats={locked=false,x=0}}', recovery, bundled=True)
-    manual.execute('''
-        reloads = 0
-        function ReloadUI() reloads = reloads + 1 end
-        function InCombatLockdown() return true end
-        SlashCmdList.ZOIDSTOOLS_FOREVER('restorepreset')
-        assert(reloads == 0 and ns.db.stats.x == 0)
-        function InCombatLockdown() return false end
-        SlashCmdList.ZOIDSTOOLS_FOREVER('restorepreset')
-        assert(reloads == 1 and ns.db == ZoidsTools_FDB and ns.db.stats.x == 321)
-        assert(ZoidsTools_FRecoveryDB.stats.locked)
-        ns.db.stats.x = 200
-        assert(ZoidsTools_FRecovery.stats.x == 321)
-        tickers[1].callback()
-        assert(ZoidsTools_FRecoveryDB.stats.x == 200)
-    ''')
-    # A companion with the main addon disabled must preserve its existing backup.
-    idle = start(recovery=backup, bundled=True)
-    idle.execute("frames[1].handler(nil, 'PLAYER_LOGOUT'); assert(ZoidsTools_FRecoveryDB.stats.x == 600 and #tickers == 0)")
-    no_timer = start(bundled=True)
-    no_timer.execute('''
-        C_Timer = nil
-        ZoidsTools_FRecoveryService:Start(ns.db)
-        ns.db.stats.x = 123
-        frames[1].handler(nil, 'PLAYER_LOGOUT')
-        assert(ZoidsTools_FRecoveryDB.stats.x == 123)
-    ''')
-    # A nonempty stale main save must not replace a newer explicit macro choice.
-    macro_recovery = start('ZoidsTools_FDB={stats={x=42}}', bundled=True)
-    macro_recovery.execute('ZoidsTools_FRecoveryService:Start(ns.db)')
-    macro_ns = macro_recovery.globals().ns
-    macro_recovery.execute((root / 'Modules/ConsumableMacros.lua').read_text(encoding='utf-8'), 'ZoidsTools_F', macro_ns)
-    macro_recovery.execute("""
-        -- No bag/macro APIs needed to exercise persistence of explicit choices.
-        C_Timer.After = function() end
-        ns:SetConsumableMacroOption('healthEnabled', true)
-        ns:SetConsumableMacroOption('manaEnabled', true)
-        assert(ZoidsTools_FRecoveryDB.macros.healthEnabled and ZoidsTools_FRecoveryDB.macros.manaEnabled)
-        assert(ZoidsTools_FRecoveryDB.macros.revision == 2)
-    """)
-    macro_backup = snapshot(macro_recovery, 'ZoidsTools_FRecoveryDB')
-    stale = start('ZoidsTools_FDB={macros={healthEnabled=false,manaEnabled=false},stats={x=123}}', macro_backup, bundled=True)
+    stale = start(expected + '\nZoidsTools_FRecovery={stats={x=9999}};ZoidsTools_FBackupDB={stats={x=9999}};ZoidsTools_FPresetDB={stats={x=9999}};ZoidsTools_FRecoveryDB={stats={x=9999}}')
+    assert snapshot(stale) == expected
     stale.execute("""
-        assert(ns.macroSettingsRecoveryUsed and ns.db.macros.healthEnabled and ns.db.macros.manaEnabled)
-        assert(ns.db.stats.x == 123) -- Recover only macros, not unrelated valid settings.
-        ZoidsTools_FRecoveryService:Start(ns.db)
-        assert(ZoidsTools_FRecoveryDB.macros.healthEnabled)
+        assert(#tickers == 0)
+        local finished = 0
+        ns.FinishWindowDrags = function() finished = finished + 1 end
+        frames[1].handler(nil, 'PLAYER_LOGOUT')
+        assert(finished == 1, 'Reload/logout must finish window drags without a companion')
     """)
-    macro_recovery.execute("""
-        ns:SetConsumableMacroOption('healthEnabled', false)
-        ns:SetConsumableMacroOption('manaEnabled', false)
-        assert(ZoidsTools_FRecoveryDB.macros.revision == 4)
-    """)
-    disabled_backup = snapshot(macro_recovery, 'ZoidsTools_FRecoveryDB')
-    off = start('ZoidsTools_FDB={macros={healthEnabled=true,manaEnabled=true,revision=2}}', disabled_backup, bundled=True)
-    off.execute('assert(ns.db.macros.healthEnabled == false and ns.db.macros.manaEnabled == false)')
-    newer_main = start('ZoidsTools_FDB={macros={healthEnabled=false,manaEnabled=false,revision=5}}', macro_backup, bundled=True)
-    newer_main.execute('assert(not ns.macroSettingsRecoveryUsed and ns.db.macros.revision==5 and ns.db.macros.healthEnabled==false)')
-    pinned = 'ZoidsTools_FRecovery={macros={healthEnabled=true,manaEnabled=true,healthCombatItems=true,manaCombatPotion=true,revision=1}}'
-    reset = start('ZoidsTools_FDB={macros={healthEnabled=false,manaEnabled=false},stats={x=77}}',
-                  'ZoidsTools_FRecoveryDB={macros={healthEnabled=false,manaEnabled=false}}\n'+pinned, bundled=True)
-    reset.execute('assert(ns.db.macros.healthEnabled and ns.db.macros.manaEnabled and ns.db.stats.x==77)')
-    intentional_off = start('ZoidsTools_FDB={macros={healthEnabled=false,manaEnabled=false,revision=2}}', pinned, bundled=True)
-    intentional_off.execute('assert(not ns.db.macros.healthEnabled and not ns.db.macros.manaEnabled)')
-    tracker = start(bundled=True)
-    tracker.execute('ZoidsTools_FRecoveryService:Start(ns.db)')
-    tracker.execute((root / 'Completionist/Bootstrap.lua').read_text(), 'ZoidsTools_F', tracker.globals().ns)
-    tracker.execute('''
-        ns.Completionist.char={locked=true,minimized=true,windowPoint={point="TOPLEFT",relative="BOTTOMLEFT",x=0,y=1200}}
-        ns.Completionist.SaveTrackerSettings()
-        assert(ZoidsTools_FRecoveryDB.completionistTracker.locked)
-        assert(ZoidsTools_FRecoveryDB.completionistTracker.windowPoint.y==1200)
-        ns.Completionist.char.windowPoint.y=999
-        assert(ZoidsTools_FRecoveryDB.completionistTracker.windowPoint.y==1200)
-    ''')
-    tracker_backup = snapshot(tracker, 'ZoidsTools_FRecoveryDB')
-    for main in ['', 'ZoidsTools_FDB={stats={x=42}}', 'ZoidsTools_FDB={completionistTracker={locked=false,revision=0}}']:
-        recovered_tracker = start(main, tracker_backup, bundled=True)
-        recovered_tracker.execute('assert(ns.db.completionistTracker.locked and ns.db.completionistTracker.windowPoint.y==1200)')
-    newer_tracker = start('ZoidsTools_FDB={completionistTracker={locked=false,revision=10}}', tracker_backup, bundled=True)
-    newer_tracker.execute('assert(not ns.db.completionistTracker.locked and ns.db.completionistTracker.revision==10)')
-    print('PASS: shared tracker immediate recovery snapshot; missing/stale main recovery; newer unlock preserved')
-    print('PASS: immediate macro recovery snapshot, newer backup overrides stale nonempty main settings, explicit disable and newer main win')
-    print('PASS: bundled recovery, 600-second snapshots, deep copies, logout, reload restoration, and disabled companion fallback')
-    print('PASS: missing-save recovery, repeated reloads, independent snapshot, and normal saved-settings priority')
+    print('PASS: obsolete beta backups are ignored; no backup timer is installed')
     if saved_file:
         contents = Path(saved_file).read_text(encoding='utf-8-sig')
         # Compare the client's actual saved table before and after applying defaults.
