@@ -105,6 +105,8 @@ GameTooltip = {}
 function GameTooltip:IsOwned(owner) return self.owner == owner end
 function GameTooltip:SetOwner(owner) self.owner = owner end
 function GameTooltip:SetHyperlink(link) self.link = link end
+function GameTooltip:SetText(text) self.text = text end
+function GameTooltip:AddLine(text) self.line = text end
 function GameTooltip:Show() self.shown = true end
 function GameTooltip:Hide() self.shown = false; self.owner = nil end
 
@@ -137,7 +139,16 @@ function RunCampfireTests(ns)
     buffs = {{name='Welcoming Campfire'}}
     watcher.scripts.OnEvent(nil,'UNIT_AURA','player')
     assert(bar:IsShown())
-    local button = bar.children[1]
+    local sit = bar.children[1]
+    assert(sit.attributes.type1 == 'macro' and sit.attributes.macrotext1 == '/sit')
+    assert(sit.attributes.useOnKeyDown == false and sit.clicks[1] == 'LeftButtonUp')
+    assert(sit.label.text == 'SIT' and sit.scripts.OnClick == nil)
+    assert(sit.attributes.item1 == nil and sit.cooldown == nil)
+    sit.scripts.OnEnter(sit)
+    assert(GameTooltip.text == 'SIT' and GameTooltip.line == '/sit')
+    sit.scripts.OnLeave(sit)
+    local button = bar.children[2]
+    assert(sit.point[2] < button.point[2] and sit.point[3] == button.point[3])
     assert(button.attributes.type1 == 'item' and button.attributes.item1 == 'item:20')
     assert(button.attributes.useOnKeyDown == false and #button.clicks == 1 and button.clicks[1] == 'LeftButtonUp')
     assert(button.count.text == '5' and button.cooldown.cooldownValues[2] == 3600)
@@ -148,7 +159,7 @@ function RunCampfireTests(ns)
     assert(GameTooltip.owner == button and GameTooltip.shown, "Unchanged rescans must preserve hover tooltips")
     tooltipReady = true
     watcher.scripts.OnUpdate(nil,2.1)
-    assert(#ns:FindCampfireItems() == 2 and bar.children[2].attributes.item1 == 'item:50')
+    assert(#ns:FindCampfireItems() == 2 and bar.children[3].attributes.item1 == 'item:50')
     bar.scripts.OnDragStart()
     watcher.scripts.OnUpdate(nil,0.3)
     assert(bar.moving, 'Periodic updates must not interrupt dragging')
@@ -164,21 +175,36 @@ function RunCampfireTests(ns)
     assert(not bar:IsShown() and scanCalls == scansBeforeCombat)
     SetCombat(false)
     watcher.scripts.OnEvent(nil,'PLAYER_REGEN_ENABLED')
-    assert(not bar:IsShown() and bar.children[1].attributes.item1 == 'item:50')
-    assert(not bar.children[2].shown and bar.children[2].attributes.item1 == nil)
+    assert(not bar:IsShown() and bar.children[2].attributes.item1 == 'item:50')
+    assert(not bar.children[3].shown and bar.children[3].attributes.item1 == nil)
     buffs = {{name=secret},{name='Welcoming Campfire'}}
     watcher.scripts.OnEvent(nil,'UNIT_AURA','player')
     assert(bar:IsShown())
     cooldownSecret = true
     watcher.scripts.OnEvent(nil,'SPELL_UPDATE_COOLDOWN')
-    assert(bar.children[1].cooldown.cooldownValues == nil)
+    assert(bar.children[2].cooldown.cooldownValues == nil)
     ns:SetCampfireBarEnabled(false)
     assert(not bar:IsShown())
     ns:SetCampfireBarEnabled(true)
     assert(bar:IsShown())
     bag = {}
     watcher.scripts.OnEvent(nil,'BAG_UPDATE_DELAYED')
-    assert(not bar:IsShown())
+    assert(bar:IsShown() and sit:IsShown() and not button.shown, 'SIT remains usable without items')
+    assert(sit.attributes.macrotext1 == '/sit' and bar.height == 64)
+    sit.scripts.OnEnter(sit)
+    buffs = {}
+    watcher.scripts.OnEvent(nil,'UNIT_AURA','player')
+    assert(not bar:IsShown() and not GameTooltip.shown)
+    buffs = {{name='Campfire Nearby'}}
+    for i=1,10 do bag[i]={itemID=100+i,stackCount=1,iconFileID=100} end
+    watcher.scripts.OnEvent(nil,'BAG_UPDATE_DELAYED')
+    assert(bar:IsShown() and bar.height == 100, 'SIT counts toward the ten-slot row limit')
+    for i=2,10 do
+        assert(bar.children[i].point[2] > sit.point[2] and bar.children[i].point[3] == sit.point[3])
+    end
+    assert(bar.children[11].point[3] < sit.point[3], 'Tenth item wraps after SIT plus nine items')
+    assert(sit.attributes.macrotext1 == '/sit')
+    bag = {}
     C_UnitAuras = nil
     function UnitBuff(_,index) return index == 1 and 'Welcoming Campfire' or nil end
     assert(ns:HasCampfireBuff())

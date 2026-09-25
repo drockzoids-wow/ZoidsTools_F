@@ -52,10 +52,18 @@ function ns.QuestTooltip(row)
     GameTooltip:AddLine(q.area.." - "..q.side, .7,.7,.7)
     GameTooltip:AddLine(string.format("Level %d - Requires %d - ID %d",q.level,q.min,q.id),.7,.7,.7)
     GameTooltip:AddLine(q.type..(q.classMask>0 and " - Class restricted" or ""),.7,.7,.7)
-    if q.discovered or q.observed then
+    if q.sourceStatus=="retained" then
+        GameTooltip:AddLine("Earlier Forever database entry; absent from the latest index. Availability unverified.",.85,.85,.65,true)
+    elseif q.sourceStatus=="secondary" then
+        GameTooltip:AddLine("Source: 60.tools. Listed in the Forever client; details inherited from Classic. Availability unverified.",.85,.85,.65,true)
+    elseif not q.discovered and not q.observed then
+        GameTooltip:AddLine("Source: Wowhead Forever. Datamined availability and requirements remain provisional.",.7,.7,.7,true)
+    end
+    local saved=ns.char.discovered and ns.char.discovered[q.id]
+    if q.discovered or q.observed or saved then
         GameTooltip:AddLine(q.observed and "Added to the guide from verified beta encounters." or "Discovered in game on this character.",.5,1,.7,true)
         GameTooltip:AddLine("Level requirements and faction/class restrictions are not verified.",.7,.7,.7,true)
-        local r=ns.char.discovered and ns.char.discovered[q.id]
+        local r=saved
         if not (r and r.pickup) and q.observation then r=q.observation end
         local p=r and r.pickup
         if p then
@@ -110,7 +118,7 @@ function ns.RenderRows()
             row.status:SetText(count.done.." / "..count.total)
         end
     end
-    f.range:SetText(#ns.listEntries==0 and "No matching quests" or string.format("%d quests - click area to expand",#ns.visibleQuests))
+    f.range:SetText(string.format("%d matching / %d total quests",#ns.visibleQuests,#ns.quests))
     ns.rendering=false
 end
 function ns.Refresh()

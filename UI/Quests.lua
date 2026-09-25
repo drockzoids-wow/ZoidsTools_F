@@ -23,6 +23,14 @@ function UI.CreateQuestsPage(parent)
     local help = UI.CreateBodyText(page,
         L["Hold your pause key before talking to a quest giver to read or finish quests manually. The key is checked at each stage. Shift is the default.\n\nAuto turn-in selects completed quests and claims rewards when there are zero or one choices. Multiple reward choices wait for your selection.\n\nBoth automation options start disabled. Enable either option independently."], 510)
     help:SetPoint("TOPLEFT", 0, -190)
+    local item = UI.CreateCheckbox(page, L["Show nearby quest item"],
+        L["Show a usable quest-log item near its quest area. Enabled by default. Selection changes wait until combat ends."],
+        function() return ns:GetQuestItemButtonEnabled() end,
+        function(value) ns:SetQuestItemButtonEnabled(value) end)
+    item:SetPoint("TOPLEFT", 0, -308)
+    local move = UI.CreateButton(page, L["Move quest item"], 150, 26)
+    move:SetPoint("TOPLEFT", 340, -305)
+    move:SetScript("OnClick",function() ns:ToggleQuestItemButtonMoveMode();page:Refresh() end)
     local minimize = UI.CreateCheckbox(page, L["Minimize tracker to its button"],
         L["When collapsed, hide All Objectives and the tracker background, leaving the native + button. Expand to restore the normal tracker."],
         function() return ns:GetTrackerMinimizeToButton() end,
@@ -36,7 +44,11 @@ function UI.CreateQuestsPage(parent)
     local repHelp = UI.CreateBodyText(page,
         L["For example: dwarven home zones track Ironforge. Uses localized area names from the game; enabled by default."], 510)
     repHelp:SetPoint("TOPLEFT", 0, -440)
-    function page:Refresh() accept:Refresh(); turnIn:Refresh(); modifier:Refresh(); minimize:Refresh(); reputation:Refresh() end
+    function page:Refresh()
+        accept:Refresh(); turnIn:Refresh(); modifier:Refresh(); minimize:Refresh(); reputation:Refresh(); item:Refresh()
+        UI.SetControlEnabled(move,ns:GetQuestItemButtonEnabled())
+        move:SetText(ns:IsQuestItemButtonMoveMode() and L["Lock quest item"] or L["Move quest item"])
+    end
     page:SetScript("OnShow", function(self) self:Refresh() end)
     page:Hide()
     return page

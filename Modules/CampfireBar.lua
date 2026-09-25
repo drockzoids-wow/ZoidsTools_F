@@ -1,6 +1,6 @@
 local _, ns = ...
 local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
-local watcher, bar, controller, title
+local watcher, bar, controller, title, sitButton
 local buttons, entries = {}, {}
 local dirty = true
 local nearby = false
@@ -148,6 +148,7 @@ local function CreateBar()
     bar:SetScript("OnDragStop", StopMoving)
     bar:SetScript("OnHide", function()
         StopMoving()
+        if sitButton then HideTooltip(sitButton) end
         for _, button in ipairs(buttons) do HideTooltip(button) end
     end)
     ns.UI.Theme.ApplyPanelBackdrop(bar)
@@ -168,12 +169,30 @@ local function CreateButton(index)
     button:SetBackdropBorderColor(0.82, 0.62, 0.28, 1)
     button:RegisterForClicks("LeftButtonUp")
     button:SetAttribute("useOnKeyDown", false)
-    button:SetAttribute("type1", "item")
+    button:SetAttribute("type1", index == 0 and "macro" or "item")
     button.icon = button:CreateTexture(nil, "ARTWORK")
     button.icon:SetPoint("TOPLEFT", 1, -1)
     button.icon:SetPoint("BOTTOMRIGHT", -1, 1)
     button.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
     button:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
+    if index == 0 then
+        button:SetAttribute("macrotext1", "/sit")
+        button.icon:SetTexture("Interface\\Icons\\Spell_Nature_TimeStop")
+        button.label = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        button.label:SetPoint("BOTTOM", 0, 2)
+        button.label:SetText("SIT")
+        button.label:SetTextColor(1, 0.9, 0.6)
+        button:SetScript("OnEnter", function(self)
+            if GameTooltip then
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:SetText("SIT")
+                GameTooltip:AddLine("/sit", 1, 1, 1)
+                GameTooltip:Show()
+            end
+        end)
+        button:SetScript("OnLeave", HideTooltip)
+        return button
+    end
     button.cooldown = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
     button.cooldown:SetAllPoints(button.icon)
     button.count = button:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
@@ -210,10 +229,15 @@ local function UpdateCooldowns()
 end
 
 local function Layout()
-    local columns = math.min(10, #entries)
+    local total = #entries + 1 -- SIT always occupies the first slot.
+    local columns = math.min(10, total)
     local itemWidth = columns * 36 - 4
     local width = math.max(math.ceil(title:GetStringWidth()) + 16, itemWidth + 12)
-    bar:SetSize(width, math.ceil(#entries / 10) * 36 + 28)
+    bar:SetSize(width, math.ceil(total / 10) * 36 + 28)
+    sitButton = sitButton or CreateButton(0)
+    sitButton:ClearAllPoints()
+    sitButton:SetPoint("TOPLEFT", (width - itemWidth) / 2, -24)
+    sitButton:Show()
     for i, entry in ipairs(entries) do
         local button = buttons[i] or CreateButton(i)
         if not button.entry or button.entry.id ~= entry.id then HideTooltip(button) end
@@ -221,9 +245,9 @@ local function Layout()
         -- Item-ID binding stays correct if the player sorts bags or uses up a stack.
         button:SetAttribute("item1", "item:" .. entry.id)
         button:ClearAllPoints()
-        local row = math.floor((i - 1) / 10)
-        local rowWidth = math.min(10, #entries - row * 10) * 36 - 4
-        button:SetPoint("TOPLEFT", (width - rowWidth) / 2 + ((i - 1) % 10) * 36, -24 - row * 36)
+        local row = math.floor(i / 10)
+        local rowWidth = math.min(10, total - row * 10) * 36 - 4
+        button:SetPoint("TOPLEFT", (width - rowWidth) / 2 + (i % 10) * 36, -24 - row * 36)
         button.icon:SetTexture(entry.icon or 134400)
         button.count:SetText(entry.count > 1 and tostring(entry.count) or "")
         button:Show()
@@ -266,7 +290,7 @@ function ns:RefreshCampfireBar(rescan)
         dirty = false
         Layout()
     end
-    bar:SetShown(nearby and #entries > 0)
+    bar:SetShown(nearby)
     if nearby then UpdateCooldowns() end
 end
 

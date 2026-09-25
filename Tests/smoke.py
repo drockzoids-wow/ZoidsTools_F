@@ -152,6 +152,14 @@ for file in ['Compatibility.lua', 'Modules/QuestAutomation.lua']:
 quest_lua.globals().RunQuestTests(quest_ns)
 print('PASS: quest acceptance, completed-quest selection, pause modifiers, reward choices, duplicate claims, and missing APIs')
 
+quest_item_lua = LuaRuntime(unpack_returned_tuples=True)
+quest_item_lua.execute((root / 'Tests/quest_item.lua').read_text(encoding='utf-8'))
+quest_item_ns = quest_item_lua.eval('{ db = { quests = { questItemButtonEnabled=true, questItemButton={point="CENTER",relativePoint="CENTER",x=280,y=-80} } } }')
+for file in ['Compatibility.lua', 'Modules/QuestItemButton.lua']:
+    quest_item_lua.execute((root / file).read_text(encoding='utf-8'), 'ZoidsTools_F', quest_item_ns)
+quest_item_lua.globals().RunQuestItemTests(quest_item_ns)
+print('PASS: nearby quest items, priority, completion, cooldowns, secure combat deferral, saved movement, legacy APIs and restricted values')
+
 range_lua = LuaRuntime(unpack_returned_tuples=True)
 range_lua.execute((root / 'Tests/range.lua').read_text(encoding='utf-8'))
 range_ns = range_lua.eval('{ db = { actionBars = { rangeTint = true } } }')

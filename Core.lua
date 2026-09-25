@@ -2,7 +2,7 @@ local addonName, ns = ...
 local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
 ns.addonName = addonName
 ns.title = "ZoidsTools Forever"
-ns.version = "0.2.7-beta"
+ns.version = "0.2.8-beta"
 
 local defaults = {
     reputation = { autoZone = true },
@@ -10,7 +10,8 @@ local defaults = {
     stats = { enabled = true, locked = false, point = "CENTER", relativePoint = "CENTER", x = 0, y = -180 },
     actionBars = { rangeTint = true },
     macros = { healthEnabled = false, healthCombatItems = true, manaEnabled = false, manaCombatPotion = true },
-    quests = { autoAccept = false, autoTurnIn = false, pauseModifier = "shift", minimizeTracker = true },
+    quests = { autoAccept = false, autoTurnIn = false, pauseModifier = "shift", minimizeTracker = true,
+        questItemButtonEnabled = true, questItemButton = { point = "CENTER", relativePoint = "CENTER", x = 280, y = -80 } },
     loot = { fastLoot = true, slotDelay = 0 },
     tooltips = { classColoredNames = true, itemCounts = true },
     vendor = { autoSellJunk = false, autoRepairMode = "disabled" },
@@ -134,6 +135,7 @@ events:SetScript("OnEvent", function(_, event, name)
         ns:InitializeVendorAutomation()
         ns:InitializeFastLoot()
         ns:InitializeQuestAutomation()
+        ns:InitializeQuestItemButton()
         ns:InitializeTrackerMinimize()
         ns:InitializeCustomDamageMeter()
         ns:InitializeMinimapButton()

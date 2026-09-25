@@ -20,7 +20,7 @@ function UI.CreateActionBarsPage(parent)
         function(value) ns:SetCampfireBarEnabled(value) end)
     campfire:SetPoint("TOPLEFT", 0, -240)
     local campHelp = UI.CreateBodyText(page,
-        L["Finds supported camping items in your bags. Duplicate stacks share one button. Click to use an item; hover for its tooltip. Drag the title to move the bar.\n\nShows near a campfire when matching items are carried. Cooldowns and other requirements still apply. New beta items may need a detection update."], 500)
+        L["Finds supported camping items in your bags. Duplicate stacks share one button. Click to use an item; hover for its tooltip. Drag the title to move the bar.\n\nShows near a campfire, even without camping items. The leftmost SIT button sits your character. Cooldowns and other requirements still apply. New beta items may need a detection update."], 500)
     campHelp:SetPoint("TOPLEFT", 0, -282)
     local status = UI.CreateBodyText(page, "", 500)
     status:SetPoint("TOPLEFT", 0, -390)

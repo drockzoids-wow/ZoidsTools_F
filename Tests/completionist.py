@@ -83,7 +83,7 @@ lua.execute('''
 function event(e,a)ns.events.scripts.OnEvent(ns.events,e,a)end
 function finish()for i=1,100 do ns.Tick(.1)end;assert(not ns.scan and not ns.waiting)end
 event("ADDON_LOADED","ZoidsTools_F");event("PLAYER_LOGIN")
-assert(#ns.quests==5332 and ns.scan and reads==0)
+assert(#ns.quests==6090 and ns.scan and reads==0)
 ns.Tick(.01);assert(reads<=150 and ns.scan)
 finish();assert(ZoidsTools_FDB.sentinel and ZoidsTools_FDB.pins.sentinel)
 assert(ns.Status(783)=="incomplete" and ns.char.done[783])
@@ -121,7 +121,8 @@ function GetQuestsCompleted()return false end
 event("QUEST_QUERY_COMPLETE");finish();assert(ns.Status(783)=="unknown")
 QueryQuestsCompleted=nil;GetQuestsCompleted=nil;C_QuestLog=modern;ns.legacyReady=nil
 ns.Sync(false);finish()
-ns.char.factionFilter="All";ns.char.area="All areas";ns.Refresh();assert(#ns.visibleQuests==5332)
+ns.char.factionFilter="All";ns.char.area="All areas";ns.Refresh();assert(#ns.visibleQuests==6090)
+assert(ns.window.range.text=="6090 matching / 6090 total quests")
 
 assert(not ns.window.scroll.template and ns.window.scroll.orientation=="VERTICAL")
 ns.char.followZone=false;ns.expanded={};ns.listOffset=0;ns.Refresh()
@@ -139,7 +140,7 @@ assert(#ns.listEntries==2 and ns.listEntries[2].quest.id==783)
 local matchArea=ns.listEntries[1].area
 ns.ToggleArea(matchArea);assert(#ns.listEntries==1)
 ns.ToggleArea(matchArea);assert(#ns.listEntries==2)
-ns.window.search:SetText("NO_MATCH_abcdef");assert(#ns.visibleQuests==0 and ns.window.range:GetText()=="No matching quests")
+ns.window.search:SetText("NO_MATCH_abcdef");assert(#ns.visibleQuests==0 and ns.window.range:GetText()=="0 matching / 6090 total quests")
 assert(ns.listOffset==0)
 ns.window.search:SetText("Elwynn Forest")
 assert(#ns.visibleQuests>0)
@@ -211,7 +212,7 @@ ns.Command("refresh");finish();assert(scans==5)
 ns.BeginScan=original
 """)
 print('PASS: refreshes only on turn-in/changed zone after startup; duplicate events coalesced; no refresh on show or quest-log noise; pending completion preserved; idle update handler removed.')
-print('PASS: Lua 5.1 syntax; 5,332 quests; UI startup; batched modern/legacy completion sync; historical completion; turn-in/reset updates; active/repeatable status; unknown/error/secret handling; query timeout; faction/class/status/search/area/scroll filters; old-save migration; no arrow/manual progression.')
+print('PASS: Lua 5.1 syntax; 6,090 quests; UI startup; batched modern/legacy completion sync; historical completion; turn-in/reset updates; active/repeatable status; unknown/error/secret handling; query timeout; faction/class/status/search/area/scroll filters; old-save migration; no arrow/manual progression.')
 
 lua.execute("""
 -- Verify relative layout, not just direct invocation of button callbacks.
@@ -575,3 +576,21 @@ unlocked.execute('assert(not ns.char.locked and ns.char.minimized and ns.window.
 imported=tracker_session(character='ZoidsTools_FCompletionistDB={locked=true,windowPoint={point="TOPLEFT",relative="BOTTOMLEFT",x=0,y=1200}}')
 imported.execute('assert(ZoidsTools_FDB.completionistTracker.locked and ns.window.point[5]==1200)')
 print('PASS: shared locked corner survives six logins with missing/stale character saves; alt layout sharing, unlock/minimize persistence, and existing layout import.')
+
+promoted=tracker_session(character='''ZoidsTools_FCompletionistDB={discovered={
+ [86758]={name="Twisting the Knife",level=16,category="Loch Modan",
+ pickup={name="Marek Ironheart",zone="Farstrider Lodge",mapID=1432,x=.818,y=.616}}
+}}''')
+promoted.execute('''
+    assert(#ns.quests==6090 and not ns.index[86758].discovered)
+    assert(ns.char.discovered[86758].pickup.name=="Marek Ironheart")
+    local lines={}
+    GameTooltip={SetOwner=function()end,SetText=function()end,Show=function()end,
+        AddLine=function(_,s)lines[#lines+1]=s end}
+    local row=ns.window.rows[1];row.quest=ns.index[86758]
+    row.scripts.OnEnter(row)
+    local tooltip=table.concat(lines,"\\n")
+    assert(tooltip:find("Marek Ironheart",1,true) and tooltip:find("Approximate",1,true))
+    assert(tooltip:find("Wowhead Forever",1,true))
+''')
+print('PASS: newly bundled discovery preserves saved NPC evidence, appears once, and shows both source and observation in its tooltip.')

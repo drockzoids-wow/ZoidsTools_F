@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.2.8-beta
+
+- Add a movable nearby quest-item button, enabled by default under Quests. Select active quest-log items inside the quest area, within 250 yards, or in confirmed item range; show charges and cooldowns, preserve the bound item during combat, and defer selection/visibility changes until combat ends. Saved positioning and a move preview match the retail tool's workflow.
+- Expand Completionist from 5,332 to 6,090 bundled quests: add 748 Wowhead Forever IDs and 10 additional Forever-client-listed IDs from 60.tools, update 229 existing records, and retain 884 earlier records absent from the current Wowhead index with an availability note. Include all 17 saved character discoveries in the shared inventory without changing character completion.
+- Show matching and total quest counts separately; preserve saved character observation tooltips when a discovered quest enters the bundled database. Add repeatable data collection/import tools and a source/coverage manifest, including the three-record discrepancy between Wowhead's headline and filtered lists.
+- Add a permanent leftmost SIT button to the campfire bar that runs /sit. Keep the bar available near campfires even with no usable campfire items; retain item cooldowns, saved positioning, and combat hiding.
+
 ## 0.2.7-beta
 
 - Remove the temporary beta settings recovery system: companion addon, automatic backup snapshots, fixed-preset helper, restore commands, and reminder/save/restore UI. Releases now contain only the main addon.
@@ -92,7 +99,7 @@
 
 - Added opt-in quest auto accept and turn-in with Shift/Ctrl/Alt/None pause controls and manual handling of multiple reward choices (`/ztf quests`).
 
-- Added single-pass Fast Loot with a saved 0–200 ms delay slider, fine 1 ms steps, mouse-wheel adjustment, and Auto Loot modifier support (`/ztf loot`).
+- Added single-pass Fast Loot with a saved 0â€“200 ms delay slider, fine 1 ms steps, mouse-wheel adjustment, and Auto Loot modifier support (`/ztf loot`).
 
 - Added retail-style class-colored player tooltip names, enabled by default, with a Tooltips settings page (`/ztf tooltips`) and older-client fallback.
 
