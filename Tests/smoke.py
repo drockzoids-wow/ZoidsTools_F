@@ -160,6 +160,22 @@ for file in ['Compatibility.lua', 'Modules/QuestItemButton.lua']:
 quest_item_lua.globals().RunQuestItemTests(quest_item_ns)
 print('PASS: nearby quest items, priority, completion, cooldowns, secure combat deferral, saved movement, legacy APIs and restricted values')
 
+buff_lua = LuaRuntime(unpack_returned_tuples=True)
+buff_lua.execute((root / 'Tests/missing_buffs.lua').read_text(encoding='utf-8'))
+buff_ns = buff_lua.eval('{ db = {} }')
+for file in ['Compatibility.lua', 'Modules/MissingBuffs.lua']:
+    buff_lua.execute((root / file).read_text(encoding='utf-8'), 'ZoidsTools_F', buff_ns)
+buff_lua.globals().RunMissingBuffTests(buff_ns)
+print('PASS: missing buffs, learned ranks, group equivalents, custom validation, per-character settings, saved movement, combat/death/mount hiding, and restricted/legacy auras')
+
+minimap_lua = LuaRuntime(unpack_returned_tuples=True)
+for file in ['Tests/ui_localization.lua', 'Tests/minimap.lua']:
+    minimap_lua.execute((root / file).read_text(encoding='utf-8'))
+minimap_ns = minimap_lua.eval('{ db = {} }')
+minimap_lua.execute((root / 'Modules/MinimapTools.lua').read_text(encoding='utf-8'), 'ZoidsTools_F', minimap_ns)
+minimap_lua.globals().RunMinimapTests(minimap_ns)
+print('PASS: square minimap and header restoration, mouseover/collector buttons, protected exclusions, combat deferral, and missing client widgets')
+
 range_lua = LuaRuntime(unpack_returned_tuples=True)
 range_lua.execute((root / 'Tests/range.lua').read_text(encoding='utf-8'))
 range_ns = range_lua.eval('{ db = { actionBars = { rangeTint = true } } }')

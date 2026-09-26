@@ -14,6 +14,9 @@ function UI.CreateUnitFramesPage(parent)
     local description = UI.CreateBodyText(page,
         L["Colors the health fill for player characters on the default player, target, target-of-target, and focus frames.\n\nNPCs and vehicle bars retain Blizzard's colors. Frame borders, portraits, party frames, and raid frames are unchanged.\n\nTurn this option off to restore the normal health colors. Changes to protected frames wait until combat ends. If the beta restricts class information, the addon leaves that information alone."], 500)
     description:SetPoint("TOPLEFT", 0, -54)
+    local buffs=UI.CreateButton(page,L["Missing-buff reminders"],230,30)
+    buffs:SetPoint("TOPLEFT",0,-290)
+    buffs:SetScript("OnClick",function()ns:ShowMissingBuffSettings()end)
     function page:Refresh() toggle:Refresh() end
     page:SetScript("OnShow", function(self) self:Refresh() end)
     page:Hide()

@@ -12,7 +12,7 @@ for _, method in ipairs({"SetFrameStrata", "SetClampedToScreen", "SetMovable", "
     "RegisterForDrag", "RegisterForClicks", "RegisterEvent", "SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor",
     "SetTextColor", "SetJustifyH", "SetJustifyV", "SetHitRectInsets", "SetColorTexture", "SetAlpha",
     "SetTexCoord", "SetTexture", "SetVertexColor", "SetBlendMode", "SetFrameLevel", "SetAllPoints",
-    "SetAutoFocus", "EnableMouseWheel", "SetValueStep", "SetObeyStepOnDrag", "SetMinMaxValues",
+    "SetAutoFocus", "SetMaxLetters", "EnableMouseWheel", "SetValueStep", "SetObeyStepOnDrag", "SetMinMaxValues",
     "SetOrientation", "SetThumbTexture", "SetHighlightTexture", "SetNormalTexture", "SetPushedTexture",
     "StartMoving", "StopMovingOrSizing", "SetClipsChildren", "SetToplevel"}) do methods[method]=function() end end
 function methods:SetPoint(...) self.point={...} end
@@ -65,6 +65,8 @@ function InitializeTestSettings()
     end
 end
 function VerifySettings(ns)
+    ns:ShowMissingBuffSettings()
+    ns:ShowMinimapSettings()
     for _,page in ipairs({'meters','windows','unitframes','castbars','vendor','tooltips','loot','quests','actionbars','stats','macros','completionist'}) do
         ns.UI2.Show(page)
     end

@@ -62,7 +62,7 @@ The retail ZoidsTools addon is not required; its files and saved settings are no
 
 Quest automation is opt-in under `/ztf quests`, with independent Auto Accept and Auto Turn-in toggles. Hold Shift (or select Ctrl, Alt, or None) to pause at each quest stage. Turn-in claims zero/one-choice rewards and leaves multiple choices for manual handling. Supports the modern gossip quest list and classic quest greetings. Test acceptance, a completed quest, a reward-choice quest, and your pause key in game.
 
-The nearby quest-item button is enabled by default under `/ztf quests`. It appears to the right of center for an active quest-log item when the game reports you inside its quest area, within 250 yards on the same continent, or in item-use range. Click to use; right-drag to move. **Move quest item** shows a preview with item use disabled; **Lock quest item** ends the preview. Position is saved across characters. The button shows charges, cooldowns and red range feedback. During combat, the already-selected item remains usable; selecting another item, appearing/hiding, and option changes wait until combat ends. Unknown proximity does not display an item. Bag-only items without a quest-log association are not guessed. Verify the quest-area/item APIs with a usable quest item in Forever beta.
+The nearby quest-item button is enabled by default under `/ztf quests`. It appears to the right of center for an active quest-log item when the game reports you inside its quest area, within 250 yards on the same continent, or in item-use range. Click to use; right-drag to move. **Move quest item** shows a preview marked **MOVE**, with item use disabled and either mouse button available for dragging; **Lock quest item** ends the preview and restores left-click item use. Position is saved across characters. The button shows charges, cooldowns and red range feedback. During combat, the already-selected item remains usable; selecting another item, appearing/hiding, and option changes wait until combat ends. Unknown proximity does not display an item. Bag-only items without a quest-log association are not guessed. Verify the quest-area/item APIs with a usable quest item in Forever beta.
 
 Fast Loot is enabled by default and follows Blizzard's Auto Loot setting and modifier. Open `/ztf loot` to disable it or choose 0Ã¢â‚¬â€œ200 ms between item requests in 1 ms steps. Drag the slider or use the mouse wheel over it for precise adjustment; the label shows seconds and milliseconds. It attempts each slot once per opening, with no second pass. Actual pickup timing depends on the server and Blizzard's own looting behavior. Test with several items, the Auto Loot modifier, and closing loot mid-pickup.
 
@@ -100,6 +100,24 @@ Adapted from the sibling ZoidsTools project. Retail-only modules are excluded. U
 Settings, bag anchors, window positions/scales, and shared tracker layout use the main addon's normal SavedVariables. No backup commands, recovery timer, or beta reminder is needed. Existing main-addon settings are retained.
 
 The temporary beta Recovery and Personal Preset companions are retired. Leave old companions disabled or remove their separate addon folders; do not delete the main addon's SavedVariables file.
+
+### Minimap
+
+The minimap cluster's screen-edge limits are automatically removed. Use Edit Mode to move it farther into a corner.
+
+Open `/ztf minimap` or **Minimap options** on the main settings page. The retail-style options include a square map with class-colored border, compact zone/clock/tracking header, hiding the addon compartment, showing addon buttons on mouseover, and collecting addon buttons in one expandable button. Drag the collector around the minimap to reposition it. Collection takes precedence over mouseover hiding; protected buttons and map pins are excluded.
+
+The layout options default off and are shared across characters. Disabling them restores the original layout. Changes made during combat apply afterward. Missing client widgets are skipped; retail expansion-button tools are not included. New labels use English fallback. The Forever client appearance still needs in-game verification.
+
+### Missing buffs
+
+Enable **Lock buff bar** in `/ztf buffs` to prevent accidental dragging and hide the movement hint. Unlock it to reposition the bar; preview respects the lock too.
+
+Use **Buff bar size** in `/ztf buffs` to scale the icons and heading from 50% to 200%. The size is saved per character; toggle the preview to adjust it when no buffs are missing.
+
+Open `/ztf buffs`, or **Missing-buff reminders** under Unit Frames. Quiet visual reminders are enabled by default for supported learned class buffs: Mark/Gift of the Wild, priest buffs, mage intellect/armor, warlock armor, and Battle Shout. Thorns, Lightning Shield and Righteous Fury are optional. Classes without presets can use custom spell IDs. Choices and reminder position are saved per character.
+
+Reminders hide during combat, while mounted, and while dead, then recheck on resurrection or other relevant events. Any recognized rank or group equivalent satisfies a reminder. Unknown/restricted aura data suppresses reminders. Add up to eight custom spell IDs for learned buffs; if a buff uses a separate aura ID/name, it needs a future family entry. Icons are reminders only: hover for names and use your normal action bars to cast. Drag the reminder to move it, or toggle the preview in settings. New labels use English fallback; Forever-specific spell changes need in-game verification.
 
 ### Completionist
 

@@ -5,7 +5,9 @@ function methods:SetAttribute(k,v) protected(self);self.attributes[k]=v end
 function methods:SetShown(v) protected(self);self.shown=v end
 function methods:Show()self:SetShown(true)end
 function methods:Hide()self:SetShown(false)end
-function methods:SetPoint(...)protected(self);self.point={...}end
+function methods:SetPoint(...)
+    protected(self);self.point={...};self.points=self.points or {};self.points[self.point[1]]=self.point
+end
 function methods:GetPoint()return unpack(self.point)end
 function methods:ClearAllPoints()protected(self);self.point=nil end
 function methods:StartMoving()protected(self);self.moving=true end
@@ -19,12 +21,19 @@ function methods:SetCooldown(s,d)self.start=s;self.duration=d end
 function methods:Clear()self.start=nil;self.duration=nil end
 function methods:CreateTexture()return CreateFrame()end
 function methods:CreateFontString()return CreateFrame()end
+function methods:EnableMouse(value)self.mouseEnabled=value end
+function methods:RegisterForDrag(...)self.dragButtons={...}end
+function methods:RegisterForClicks(...)self.clicks={...}end
+function methods:SetAllPoints(region)self.allPoints=region end
+function methods:SetBackdrop(value)self.backdrop=value end
+function methods:SetBackdropColor()end
+function methods:SetBackdropBorderColor()end
 for _,name in ipairs({"SetSize","SetClampedToScreen","SetMovable","SetDontSavePosition",
-    "RegisterForClicks","RegisterForDrag","SetNormalTexture","SetHighlightTexture","SetAllPoints"}) do
+    "SetNormalTexture","SetHighlightTexture"}) do
     methods[name]=function()end
 end
 function CreateFrame(_,name,_,template)
-    local f=setmetatable({scripts={},attributes={},events={},secure=template=="SecureActionButtonTemplate"},{__index=methods})
+    local f=setmetatable({scripts={},attributes={},events={},secure=template and template:find("SecureActionButtonTemplate",1,true)~=nil},{__index=methods})
     if name then _G[name]=f end
     return f
 end
@@ -54,9 +63,20 @@ function RunQuestItemTests(ns)
     ns:InitializeQuestItemButton()
     local b=ns.questItemButton
     assert(not b.shown)
+    assert(b.mouseEnabled and b.cooldown.mouseEnabled==false)
+    assert(b.cooldown.allPoints==b.icon and b.backdrop.edgeSize==9)
+    assert(b.icon.points.TOPLEFT[4]==4 and b.icon.points.BOTTOMRIGHT[4]==-4)
+    assert(b.dragButtons[1]=="LeftButton" and b.dragButtons[2]=="RightButton")
+    assert(b.clicks[1]=="AnyDown" and b.clicks[2]=="AnyUp")
     log={{id=1,link="item:100",distance=62500,continent=true,charges=3}}
     ns:RefreshQuestItemButton()
     assert(b.shown and b.attributes.item1=="item:100" and b.count.text=="3" and b.cooldown.duration==30)
+    assert(b.attributes.type1=="item" and not b.moveLabel.shown)
+    b.scripts.OnDragStart(b,"LeftButton");assert(not b.moving) -- Normal left-click remains an item action.
+    b.scripts.OnDragStart(b,"RightButton");assert(b.moving)
+    local originalLog=log;log={}
+    ns:RefreshQuestItemButton();assert(b.shown and b.moving and b.attributes.item1=="item:100")
+    log=originalLog;b.scripts.OnDragStop()
     log[1].distance=62501;ns:RefreshQuestItemButton();assert(not b.shown)
     log[1].distance=nil;ns:RefreshQuestItemButton();assert(not b.shown)
     log[1].range=1;ns:RefreshQuestItemButton();assert(b.shown)
@@ -77,10 +97,12 @@ function RunQuestItemTests(ns)
     combat=false;ns.questItemWatcher.scripts.OnEvent(nil,"PLAYER_REGEN_ENABLED")
     ns.questItemWatcher.scripts.OnUpdate(nil,.01);assert(not b.shown and b.attributes.item1==nil)
     ns:SetQuestItemButtonEnabled(true)
-    ns:ToggleQuestItemButtonMoveMode();assert(b.shown and not b.attributes.type1)
-    b.scripts.OnDragStart();b:SetPoint("CENTER",UIParent,"CENTER",42,73);b.scripts.OnDragStop()
+    ns:ToggleQuestItemButtonMoveMode();assert(b.shown and not b.attributes.type1 and b.moveLabel.shown)
+    b.scripts.OnDragStart(b,"LeftButton");assert(b.moving)
+    b:SetPoint("CENTER",UIParent,"CENTER",42,73);b.scripts.OnDragStop()
     assert(ns.db.quests.questItemButton.x==42 and ns.db.quests.questItemButton.y==73)
-    ns:ToggleQuestItemButtonMoveMode();assert(b.attributes.type1=="item")
+    ns:ToggleQuestItemButtonMoveMode();assert(b.attributes.type1=="item" and b.attributes.item1=="item:100" and not b.moveLabel.shown)
+    combat=true;b.scripts.OnDragStart(b,"RightButton");assert(not b.moving);combat=false
     log={{id=secret,link="item:100",inside=true}};ns:RefreshQuestItemButton();assert(not b.shown)
     log={{id=1,link=secret,inside=true}};ns:RefreshQuestItemButton();assert(not b.shown)
     log={{id=1,link="item:100",distance=secret,continent=true,range=secret,inside=secret}}

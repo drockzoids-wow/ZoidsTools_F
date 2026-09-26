@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+## 0.2.9-beta
+
+- Automatically remove screen-edge clamping from the minimap cluster and map frames, allowing corner placement through Edit Mode without a toggle. Defer changes during combat.
+- Correct the Forever daytime indicator to target `MinimapCluster.DielFrame`. Hide the separate calendar icon with the compact header; left-click the clock for calendar and right-click for stopwatch.
+- Rebalance the compact minimap header with a smaller clock and more room for readable location text. Anchor the daytime indicator at the map's top-right corner and move mail to the bottom-left while the header is enabled.
+- Port retail minimap options: square mask with class-colored border, compact zone/clock/tracking header, addon-compartment hiding, mouseover addon buttons, and an expandable button collector. Configure with `/ztf minimap` or Minimap options in settings. Options default off, restore the previous layout when disabled, and defer layout changes during combat; skip unavailable widgets and protected addon buttons.
+- Add a per-character buff bar lock that prevents dragging and hides the movement hint, including in preview.
+- Add a per-character missing-buff bar size slider (50–200%), scaling the icons and heading together.
+- Center each row of missing-buff icons beneath the heading, including single buffs and partially filled rows.
+- Add quiet missing-buff reminders with per-character class choices, optional Thorns and situational buffs, custom spell IDs, rank/group-equivalent detection, and a movable preview. Hide in combat, while dead, or mounted; recheck after resurrection. Configure with `/ztf buffs` or Unit Frames settings. Unreadable aura data never becomes a false missing-buff warning.
+- Fix quest-item mouse handling: explicitly enable the button's mouse input and prevent the cooldown from intercepting clicks/drags. Move mode accepts left- or right-drag and displays a MOVE label; locking restores item use. Proximity refreshes leave an active drag alone. Keep right-drag available outside Move mode and preserve saved positioning.
+- Replace the quest-item button's mismatched quickslot artwork with a fitted border and inset icon/cooldown.
+
 ## 0.2.8-beta
 
 - Add a movable nearby quest-item button, enabled by default under Quests. Select active quest-log items inside the quest area, within 250 yards, or in confirmed item range; show charges and cooldowns, preserve the bound item during combat, and defer selection/visibility changes until combat ends. Saved positioning and a move preview match the retail tool's workflow.

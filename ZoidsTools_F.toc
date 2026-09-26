@@ -2,7 +2,7 @@
 ## Title: ZoidsTools Forever
 ## Notes: Forever beta tools with damage meters, movable windows and a Completionist quest tracker.
 ## Author: Drockzoids
-## Version: 0.2.8-beta
+## Version: 0.2.9-beta
 ## X-Curse-Project-ID: 1700355
 ## SavedVariables: ZoidsTools_FDB, ZoidsTools_FInventoryDB
 ## SavedVariablesPerCharacter: ZoidsTools_FCompletionistDB
@@ -35,6 +35,8 @@ Completionist\Discovery.lua
 Completionist\UI.lua
 Modules\MovableWindows.lua
 Modules\UnitFrames.lua
+Modules\MissingBuffs.lua
+Modules\MinimapTools.lua
 Modules\PlayerTooltip.lua
 Modules\ItemInventory.lua
 Modules\ActionButtonRange.lua
@@ -53,6 +55,8 @@ UI\Theme.lua
 UI\Controls.lua
 UI\Windows.lua
 UI\UnitFrames.lua
+UI\MissingBuffs.lua
+UI\MinimapSettings.lua
 UI\Tooltips.lua
 UI\ActionBars.lua
 UI\Macros.lua

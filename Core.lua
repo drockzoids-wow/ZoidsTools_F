@@ -2,9 +2,10 @@ local addonName, ns = ...
 local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
 ns.addonName = addonName
 ns.title = "ZoidsTools Forever"
-ns.version = "0.2.8-beta"
+ns.version = "0.2.9-beta"
 
 local defaults = {
+    buffs = { characters = {} },
     reputation = { autoZone = true },
     campfire = { enabled = true, point = "BOTTOM", relativePoint = "BOTTOM", x = 0, y = 260 },
     stats = { enabled = true, locked = false, point = "CENTER", relativePoint = "CENTER", x = 0, y = -180 },
@@ -124,6 +125,7 @@ events:SetScript("OnEvent", function(_, event, name)
     elseif event == "PLAYER_LOGIN" then
         ns:InitializeMovableWindows()
         ns:InitializeUnitFrames()
+        ns:InitializeMissingBuffs()
         ns:InitializePlayerTooltip()
         ns:InitializeWarbandItems()
         ns:InitializeActionButtonRange()
@@ -139,6 +141,7 @@ events:SetScript("OnEvent", function(_, event, name)
         ns:InitializeTrackerMinimize()
         ns:InitializeCustomDamageMeter()
         ns:InitializeMinimapButton()
+        ns:InitializeMinimapTools()
     end
 end)
 
@@ -159,6 +162,10 @@ SlashCmdList.ZOIDSTOOLS_FOREVER = function(message)
         ns:Print(string.format(L["Automatic zone reputation: %s."], state == "on" and L["Enabled"] or L["Disabled"]))
     elseif command == "rep" or command == "reputation" then
         ns:OpenConfig("quests")
+    elseif command == "minimap" then
+        ns:ShowMinimapSettings()
+    elseif command == "buffs" or command == "buff" then
+        ns:ShowMissingBuffSettings()
     elseif command == "stats" then
         ns:OpenConfig("stats")
     elseif command == "macros" or command == "macro" or command == "food" or command == "water" or command == "drink" then

@@ -95,24 +95,39 @@ local function Cooldown()
 end
 local function CreateButton()
     if button or Combat() then return end
-    button=CreateFrame("Button","ZoidsTools_FQuestItemButton",UIParent,"SecureActionButtonTemplate")
+    button=CreateFrame("Button","ZoidsTools_FQuestItemButton",UIParent,"SecureActionButtonTemplate,BackdropTemplate")
     ns.questItemButton=button
-    button:SetSize(46,46);button:SetClampedToScreen(true);button:SetMovable(true)
+    button:SetSize(46,46);button:SetClampedToScreen(true);button:SetMovable(true);button:EnableMouse(true)
     if button.SetDontSavePosition then button:SetDontSavePosition(true) end
-    button:RegisterForClicks("AnyDown","AnyUp");button:RegisterForDrag("RightButton")
+    button:RegisterForClicks("AnyDown","AnyUp");button:RegisterForDrag("LeftButton","RightButton")
     button:SetAttribute("pressAndHoldAction",true)
-    button:SetNormalTexture("Interface\\Buttons\\UI-Quickslot2")
+    -- Quickslot artwork has transparent padding and does not fit a full-size icon.
+    -- Keep one bounded border and inset both the icon and cooldown inside it.
+    button:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8x8",
+        edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",edgeSize=9,
+        insets={left=3,right=3,top=3,bottom=3}})
+    button:SetBackdropColor(.04,.04,.04,1)
+    button:SetBackdropBorderColor(.8,.7,.45,1)
     button:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
-    button.icon=button:CreateTexture(nil,"ARTWORK");button.icon:SetAllPoints(button)
+    button.icon=button:CreateTexture(nil,"ARTWORK")
+    button.icon:SetPoint("TOPLEFT",button,"TOPLEFT",4,-4)
+    button.icon:SetPoint("BOTTOMRIGHT",button,"BOTTOMRIGHT",-4,4)
     button.cooldown=CreateFrame("Cooldown",nil,button,"CooldownFrameTemplate")
-    button.cooldown:SetAllPoints(button)
+    button.cooldown:SetAllPoints(button.icon)
+    button.cooldown:EnableMouse(false) -- All dragging/clicks belong to the secure button.
     button.count=button:CreateFontString(nil,"OVERLAY","NumberFontNormal")
-    button.count:SetPoint("BOTTOMRIGHT",-2,2)
+    button.count:SetPoint("BOTTOMRIGHT",-5,5)
+    button.moveLabel=button:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
+    button.moveLabel:SetPoint("BOTTOM",button,"TOP",0,4)
+    button.moveLabel:SetText(L["MOVE"])
+    button.moveLabel:Hide()
     local p=Settings().questItemButton
     local ok=pcall(button.SetPoint,button,p.point,UIParent,p.relativePoint,p.x,p.y)
     if not ok then button:ClearAllPoints();button:SetPoint("CENTER",UIParent,"CENTER",280,-80) end
-    button:SetScript("OnDragStart",function()
-        if not Combat() then button:StartMoving();moving=true end
+    button:SetScript("OnDragStart",function(_,mouseButton)
+        if not Combat() and (mouseButton=="RightButton" or (moveMode and mouseButton=="LeftButton")) then
+            button:StartMoving();moving=true
+        end
     end)
     button:SetScript("OnDragStop",StopMoving)
     button:SetScript("OnEnter",function(self)
@@ -122,7 +137,8 @@ local function CreateButton()
             GameTooltip:SetHyperlink(self.candidate.link)
             GameTooltip:AddLine(self.candidate.title,1,.82,.4,true)
         else GameTooltip:SetText(L["Quest item button"]) end
-        GameTooltip:AddLine(L["Right-drag to move. Item selection updates after combat."],.7,.7,.7,true)
+        GameTooltip:AddLine(moveMode and L["Left- or right-drag to move. Lock the button in Quests settings when finished."]
+            or L["Right-drag to move. Item selection updates after combat."],.7,.7,.7,true)
         GameTooltip:Show()
     end)
     button:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
@@ -139,10 +155,12 @@ function ns:RefreshQuestItemButton()
         return
     end
     CreateButton()
+    if moving then return end -- Do not hide or replace the item midway through a drag.
     local candidate=self:FindNearbyQuestItem()
     if button.candidate and (not candidate or candidate.itemID~=button.candidate.itemID) and GameTooltip
         and GameTooltip.IsOwned and GameTooltip:IsOwned(button) then GameTooltip:Hide() end
     button.candidate=candidate
+    button.moveLabel:SetShown(moveMode)
     button:SetAttribute("type1",candidate and not moveMode and "item" or nil)
     button:SetAttribute("item1",candidate and not moveMode and ("item:"..candidate.itemID) or nil)
     button.icon:SetTexture(candidate and candidate.icon or 134400)

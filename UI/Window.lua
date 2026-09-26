@@ -92,6 +92,9 @@ local function BuildWindow()
     Check(L["Show minimap button"], L["Open settings from the minimap."],
         function() return ns.db.ui.minimap.show end,
         function(v) ns:SetMinimapShown(v) end, -102)
+    local minimapSettings = UI.CreateButton(page, L["Minimap options"], 180, 26)
+    minimapSettings:SetPoint("TOPLEFT", 278, -102)
+    minimapSettings:SetScript("OnClick", function() ns:ShowMinimapSettings() end)
 
     local function Slider(label, min, max, step, getter, setter, x, y, format)
         local c = UI.CreateSlider(page, label, nil, min, max, step, getter, setter, 220, format)

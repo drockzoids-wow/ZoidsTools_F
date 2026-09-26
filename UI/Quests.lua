@@ -26,7 +26,7 @@ function UI.CreateQuestsPage(parent)
     local item = UI.CreateCheckbox(page, L["Show nearby quest item"],
         L["Show a usable quest-log item near its quest area. Enabled by default. Selection changes wait until combat ends."],
         function() return ns:GetQuestItemButtonEnabled() end,
-        function(value) ns:SetQuestItemButtonEnabled(value) end)
+        function(value) ns:SetQuestItemButtonEnabled(value);page:Refresh() end)
     item:SetPoint("TOPLEFT", 0, -308)
     local move = UI.CreateButton(page, L["Move quest item"], 150, 26)
     move:SetPoint("TOPLEFT", 340, -305)
