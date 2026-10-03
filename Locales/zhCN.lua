@@ -2,6 +2,10 @@ local _, ns = ...
 if ns.locale ~= "zhCN" then return end
 -- Initial machine-assisted translation; native-speaker review welcome.
 ns:RegisterLocale("zhCN", {
+    ["Auto-open containers"] = "自动开启容器",
+    ["Open clams and unlocked containers in your bags."] = "开启背包中的蚌壳和未上锁的容器。",
+    ["Off by default. Skips locked boxes; pauses in combat and at vendors, mail, banks and trades. Hold Shift to pause. Requires free bag space. Uses normal loot settings."] = "默认关闭。跳过上锁的箱子；战斗中以及使用商人、邮箱、银行或交易时暂停。按住Shift可暂停。需要背包有空位。使用常规拾取设置。",
+
     ["  •  Preview"] = "  • 预览",
     [" • 0.15-second refresh limit."] = " • 0.15 秒刷新限制。",
     ["%.3f s (%d ms)"] = "%.3f 秒（%d 毫秒）",

@@ -56,7 +56,7 @@ UIParent=CreateFrame('Frame')
 UISpecialFrames={}; SlashCmdList={}
 DEFAULT_CHAT_FRAME={AddMessage=function() end}
 function InCombatLockdown() return false end
-function GetBuildInfo() return '1.60.1','69893','',160001 end
+function GetBuildInfo() return '1.60.1','70170','',16001 end
 function InitializeTestSettings()
     for _, object in ipairs(objects) do
         if object.scripts.OnEvent then
@@ -67,7 +67,7 @@ end
 function VerifySettings(ns)
     ns:ShowMissingBuffSettings()
     ns:ShowMinimapSettings()
-    for _,page in ipairs({'meters','windows','unitframes','castbars','vendor','tooltips','loot','quests','actionbars','stats','macros','completionist'}) do
+    for _,page in ipairs({'meters','windows','unitframes','castbars','vendor','tooltips','loot','quests','actionbars','stats','macros','completionist','professions'}) do
         ns.UI2.Show(page)
     end
     assert(ZoidsTools_FSettings.width == ((ns.locale and ns.locale~='enUS') and 900 or 740))

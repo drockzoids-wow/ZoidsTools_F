@@ -2,6 +2,10 @@ local _, ns = ...
 if ns.locale ~= "ptBR" then return end
 -- Initial machine-assisted translation; native-speaker review welcome.
 ns:RegisterLocale("ptBR", {
+    ["Auto-open containers"] = "Abrir recipientes automaticamente",
+    ["Open clams and unlocked containers in your bags."] = "Abre mariscos e recipientes destrancados nas bolsas.",
+    ["Off by default. Skips locked boxes; pauses in combat and at vendors, mail, banks and trades. Hold Shift to pause. Requires free bag space. Uses normal loot settings."] = "Desativado por padrão. Ignora caixas trancadas; pausa em combate e ao usar vendedores, correio, bancos e trocas. Segure Shift para pausar. Requer espaço livre nas bolsas. Usa as configurações normais de saque.",
+
     ["  •  Preview"] = "  • Visualização",
     [" • 0.15-second refresh limit."] = " • Limite de atualização de 0,15 segundos.",
     ["%.3f s (%d ms)"] = "%.3f s (%d ms)",

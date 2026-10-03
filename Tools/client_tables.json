@@ -1,0 +1,152 @@
+[
+  {
+    "tableName": "ArtifactQuestXP",
+    "tableHash": "CA31E679",
+    "db2FileDataID": 1036203
+  },
+  {
+    "tableName": "CampaignXQuestLine",
+    "tableHash": "00CB59F4",
+    "db2FileDataID": 2036722
+  },
+  {
+    "tableName": "CollectableSourceQuest",
+    "tableHash": "CBB62A64",
+    "db2FileDataID": 5205183
+  },
+  {
+    "tableName": "CollectableSourceQuestSparse",
+    "tableHash": "CB62F9AC",
+    "db2FileDataID": 5205600
+  },
+  {
+    "tableName": "GMSurveyQuestions",
+    "tableHash": "FEAFC1B9",
+    "dbcFileDataID": 841614,
+    "db2FileDataID": 1278178
+  },
+  {
+    "tableName": "QuestDrivenScenario",
+    "tableHash": "F44988FD",
+    "db2FileDataID": 5917361
+  },
+  {
+    "tableName": "QuestFactionReward",
+    "tableHash": "BFB87048",
+    "dbcFileDataID": 801741,
+    "db2FileDataID": 1282622
+  },
+  {
+    "tableName": "QuestFeedbackEffect",
+    "tableHash": "79C72909",
+    "dbcFileDataID": 801742,
+    "db2FileDataID": 1343388
+  },
+  {
+    "tableName": "QuestHub",
+    "tableHash": "71C894AF",
+    "db2FileDataID": 5905413
+  },
+  {
+    "tableName": "QuestInfo",
+    "tableHash": "2D11D732",
+    "dbcFileDataID": 841674,
+    "db2FileDataID": 1120960
+  },
+  {
+    "tableName": "QuestLabel",
+    "tableHash": "C687987A",
+    "db2FileDataID": 5202058
+  },
+  {
+    "tableName": "QuestLine",
+    "tableHash": "EB57A423",
+    "db2FileDataID": 973430
+  },
+  {
+    "tableName": "QuestLineXQuest",
+    "tableHash": "8CC17856",
+    "db2FileDataID": 973441
+  },
+  {
+    "tableName": "QuestMoneyReward",
+    "tableHash": "CF096091",
+    "dbcFileDataID": 876864,
+    "db2FileDataID": 1139047
+  },
+  {
+    "tableName": "QuestObjective",
+    "tableHash": "01325CA0",
+    "db2FileDataID": 1251960
+  },
+  {
+    "tableName": "QuestPackageItem",
+    "tableHash": "CC2F84F0",
+    "db2FileDataID": 801743
+  },
+  {
+    "tableName": "QuestPOIBlob",
+    "tableHash": "AE1CA308",
+    "dbcFileDataID": 801744,
+    "db2FileDataID": 1251882
+  },
+  {
+    "tableName": "QuestPOIPoint",
+    "tableHash": "83467FEB",
+    "dbcFileDataID": 801745,
+    "db2FileDataID": 1251883
+  },
+  {
+    "tableName": "QuestSort",
+    "tableHash": "5479CB09",
+    "dbcFileDataID": 841635,
+    "db2FileDataID": 1134585
+  },
+  {
+    "tableName": "QuestV2",
+    "tableHash": "3AC83109",
+    "dbcFileDataID": 801746,
+    "db2FileDataID": 1139443
+  },
+  {
+    "tableName": "QuestV2CliTask",
+    "tableHash": "0F992211",
+    "db2FileDataID": 1028735
+  },
+  {
+    "tableName": "QuestXGroupActivity",
+    "tableHash": "827BFAAE",
+    "db2FileDataID": 1573634
+  },
+  {
+    "tableName": "QuestXP",
+    "tableHash": "3D89A572",
+    "dbcFileDataID": 801747,
+    "db2FileDataID": 1139378
+  },
+  {
+    "tableName": "QuestXUIQuestDetailsTheme",
+    "tableHash": "16A619C3",
+    "db2FileDataID": 3448517
+  },
+  {
+    "tableName": "QuestXUiWidgetSet",
+    "tableHash": "07DA21DD",
+    "db2FileDataID": 3923421
+  },
+  {
+    "tableName": "UiMap",
+    "tableHash": "89927BF7",
+    "db2FileDataID": 1957206
+  },
+  {
+    "tableName": "UiMapAssignment",
+    "tableHash": "5153A338",
+    "db2FileDataID": 1957219
+  },
+  {
+    "tableName": "UiQuestDetailsTheme",
+    "tableHash": "770BDC1F",
+    "db2FileDataID": 3448518
+  }
+]

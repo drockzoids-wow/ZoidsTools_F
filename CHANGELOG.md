@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+## 0.2.10-beta
+
+- Fix the incompatible-addon declaration for Forever 1.60.1: use interface 16001 instead of 160001. Correct release metadata and add an offline regression check; upload tests now use an in-memory archive stand-in without generating a ZIP.
+
+- Add retail-style item-level labels to supported character/inspect, bag and bank gear icons, plus player mouseover item levels from native equipped/inspect averages. Match inspection responses by GUID, throttle requests, cache briefly, respect manual inspections and combat, and omit unavailable values. Separate toggles under Tooltips default on.
+
+- Fix missing Principal Source sampler buttons with explicit Alliance/Horde quest-to-item fallbacks. Require the active quest and carried empty sampler; use Darkshore/Barrens as a zone-wide fallback when native item/proximity data is absent, and use bag cooldowns for fallback items.
+
+- Add an opt-in Professions page and `/ztf professions` with Alt/Ctrl/Shift left-click disenchanting. Highlight candidate bag gear, require the learned spell, target the clicked bag slot through a secure action, reject stale targets, and hide during combat or modifier release.
+
+- Add an opt-in Auto-open containers setting under Loot for clams and unlocked bag containers. Require game-confirmed openable tooltips, pace openings, skip unchanged failed items, and pause during combat, looting, full bags and vendor/mail/bank/trade interactions. Hold Shift to pause.
+
+- Remove the experimental Completionist arrow, map pins, live navigation, quest-click directions and navigation controls. Keep the core quest tracker, filters, discoveries and completion checks.
+
+- Reposition LibDBIcon minimap buttons from their saved angles when the square layout loads or refreshes, the map resizes, or buttons return from the collector. Restore circular placement when square mode is disabled without changing button visibility or drag settings; defer resizing updates during combat.
+- Group imported pickup sightings by giver and zone in quest tooltips. Show one representative location and an alternate-position count instead of repeating the same giver on several rows. Character discovery storage remains one pickup observation per quest.
+- Audit installed Forever build 1.60.1.70009 directly: decode 6,605 readable QuestV2 IDs, retain 1,423 extra IDs as unverified candidates, and account separately for 89 encrypted records. Index 195 cached quests and check 39,814 hotfix records without changing game files or character saves.
+- Add client-derived storyline and completion-marker tooltip details for the 11 already-listed Toxic Soil quests. Bundle evidence for 22 quest IDs in total (23 completion markers); the other IDs gain these details if discovered later. Preserve the 6,090-quest list rather than inventing titles or treating internal/client-only IDs as playable quests.
+- Add repeatable local extraction/audit tools and a report with source hashes, missing IDs, raw map markers, coordinate conversion, and explicit coverage limits. No pickup NPC locations are inferred from objective markers.
+
 ## 0.2.9-beta
 
 - Automatically remove screen-edge clamping from the minimap cluster and map frames, allowing corner placement through Edit Mode without a toggle. Defer changes during combat.

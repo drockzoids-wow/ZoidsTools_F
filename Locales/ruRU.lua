@@ -2,6 +2,10 @@ local _, ns = ...
 if ns.locale ~= "ruRU" then return end
 -- Initial machine-assisted translation; native-speaker review welcome.
 ns:RegisterLocale("ruRU", {
+    ["Auto-open containers"] = "Автоматически открывать контейнеры",
+    ["Open clams and unlocked containers in your bags."] = "Открывает моллюсков и незапертые контейнеры в сумках.",
+    ["Off by default. Skips locked boxes; pauses in combat and at vendors, mail, banks and trades. Hold Shift to pause. Requires free bag space. Uses normal loot settings."] = "По умолчанию выключено. Пропускает запертые ящики; приостанавливается в бою, у торговцев, на почте, в банке и при обмене. Удерживайте Shift для паузы. Требуется свободное место в сумках. Использует обычные настройки добычи.",
+
     ["  •  Preview"] = "  • Предварительный просмотр",
     [" • 0.15-second refresh limit."] = " • Ограничение обновления 0,15 секунды.",
     ["%.3f s (%d ms)"] = "%.3f с (%d мс)",

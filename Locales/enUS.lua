@@ -1,6 +1,10 @@
 local _, ns = ...
 -- English source keys; missing translations always fall back to these strings.
 ns.localeKeys = {
+    ["Auto-open containers"] = true,
+    ["Open clams and unlocked containers in your bags."] = true,
+    ["Off by default. Skips locked boxes; pauses in combat and at vendors, mail, banks and trades. Hold Shift to pause. Requires free bag space. Uses normal loot settings."] = true,
+
     ["  •  Preview"] = true,
     [" • 0.15-second refresh limit."] = true,
     ["%.3f s (%d ms)"] = true,

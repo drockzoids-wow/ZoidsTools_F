@@ -25,8 +25,15 @@ function UI.CreateLootPage(parent)
     local help = UI.CreateBodyText(page,
         L["Adjust in 1 ms steps by dragging or using the mouse wheel over the slider. 0 ms requests all available loot immediately; the maximum is 0.200 seconds between items. Server response time can still affect pickup speed.\n\nUses your Auto Loot setting and its modifier key. Enable Auto Loot in Blizzard's settings, or hold your Auto Loot modifier to loot automatically.\n\nEach slot gets one attempt per loot opening. Locked items and any normal loot confirmations remain under Blizzard's control."], 510)
     help:SetPoint("TOPLEFT", 0, -155)
+    local containers = UI.CreateCheckbox(page, L["Auto-open containers"], L["Open clams and unlocked containers in your bags."],
+        function() return ns:GetAutoOpenContainersEnabled() end,
+        function(value) ns:SetAutoOpenContainersEnabled(value) end)
+    containers:SetPoint("TOPLEFT", 0, -350)
+    local containerHelp = UI.CreateBodyText(page,
+        L["Off by default. Skips locked boxes; pauses in combat and at vendors, mail, banks and trades. Hold Shift to pause. Requires free bag space. Uses normal loot settings."], 510)
+    containerHelp:SetPoint("TOPLEFT", 0, -395)
     function page:Refresh()
-        enabled:Refresh(); delay:Refresh()
+        enabled:Refresh(); delay:Refresh(); containers:Refresh()
         UI.SetControlEnabled(delay, ns:GetFastLootEnabled())
     end
     page:SetScript("OnShow", function(self) self:Refresh() end)

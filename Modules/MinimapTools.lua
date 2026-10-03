@@ -37,6 +37,7 @@ local originalWidgetPoints = {}
 local originalShown = {}
 local collectedButtonClickHooks = {}
 local addonButtonMouseHooks = {}
+local squareButtonLayoutApplied = false
 
 local SQUARE_MASK = "Interface\\BUTTONS\\WHITE8X8"
 local DEFAULT_MASK = "Textures\\MinimapMask"
@@ -1774,6 +1775,25 @@ local function ApplyMinimapScreenLimits()
     changingClamp = false
 end
 
+local function RefreshMinimapButtonPositions(square)
+    if not square and not squareButtonLayoutApplied then return end
+    squareButtonLayoutApplied = square
+    local library = LibStub and LibStub("LibDBIcon-1.0", true)
+    if not library or not library.GetButtonList or not library.GetMinimapButton
+        or not library.SetButtonToPosition then return end
+
+    -- Keep each addon's saved angle as the source of truth. Refresh() also
+    -- changes visibility and drag scripts, so only ask for a new position.
+    for _, name in ipairs(library:GetButtonList()) do
+        local button = library:GetMinimapButton(name)
+        if IsAddonMinimapButton(button) and button:GetParent() == Minimap
+            and not IsButtonInCollector(button) then
+            local angle = button.db and button.db.minimapPos or button.minimapPos
+            library:SetButtonToPosition(button, angle or 225)
+        end
+    end
+end
+
 local function ApplyMinimapTools()
     if not Minimap then return end
     if IsCombatLocked() then
@@ -1791,6 +1811,7 @@ local function ApplyMinimapTools()
     ApplySquareMinimap(db.square == true)
     ApplyInfoBar(db.moveHeader == true)
     ApplyAddonButtons()
+    RefreshMinimapButtonPositions(db.square == true)
 end
 
 
@@ -1917,6 +1938,9 @@ function ns:InitializeMinimapTools()
     end
 
     initialized = true
+    if Minimap and Minimap.HookScript then
+        Minimap:HookScript("OnSizeChanged", function() ScheduleRefresh() end)
+    end
     eventFrame = CreateFrame("Frame")
     eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
     eventFrame:RegisterEvent("ADDON_LOADED")

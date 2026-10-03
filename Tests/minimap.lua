@@ -79,6 +79,23 @@ local protected=widget('Button','ProtectedAddon',Minimap);protected.protected=tr
 local pin=widget('Button','GatherMatePin1',Minimap)
 local originalShape=function()return 'ROUND'end
 GetMinimapShape=originalShape
+local edge=widget('Button','LibDBIcon10_EdgeTest',Minimap)
+edge.db={minimapPos=45};edge:Hide();edge:SetAlpha(.4)
+local edgeDrag=function()end
+edge:SetScript('OnDragStart',edgeDrag)
+local iconLibrary={buttons={EdgeTest=edge}}
+function iconLibrary:GetButtonList()local names={};for name in pairs(self.buttons)do names[#names+1]=name end;return names end
+function iconLibrary:GetMinimapButton(name)return self.buttons[name]end
+function iconLibrary:SetButtonToPosition(button,angle)
+ local x,y=math.cos(math.rad(angle)),math.sin(math.rad(angle))
+ local w,h=Minimap:GetWidth()/2+5,Minimap:GetHeight()/2+5
+ if GetMinimapShape()=='SQUARE' then
+  x=math.max(-w,math.min(w,x*(math.sqrt(2*w*w)-10)))
+  y=math.max(-h,math.min(h,y*(math.sqrt(2*h*h)-10)))
+ else x,y=x*w,y*h end
+ button:ClearAllPoints();button:SetPoint('CENTER',Minimap,'CENTER',x,y)
+end
+function LibStub(name)if name=='LibDBIcon-1.0' then return iconLibrary end end
 function RunMinimapTests(ns)
  ns:InitializeMinimapTools();flush()
  MinimapCluster:SetClampedToScreen(true);Minimap:SetClampedToScreen(false)
@@ -93,7 +110,19 @@ function RunMinimapTests(ns)
  ns:SetSquareMinimapEnabled(true);flush()
  assert(Minimap.mask=='Interface\\BUTTONS\\WHITE8X8' and GetMinimapShape()=='SQUARE')
  assert(not MinimapBorder.shown and ZoidsTools_FSquareMinimapBorder.shown)
+ assert(select(4,edge:GetPoint())>85,'Existing icons must adopt the square layout immediately')
+ assert(not edge.shown and edge.alpha==.4 and edge.scripts.OnDragStart==edgeDrag)
+ -- A new drag remains authoritative through refreshes and map resizing.
+ edge.db.minimapPos=180
+ ns:RefreshMinimapTools();assert(select(4,edge:GetPoint())==-95)
+ Minimap:SetSize(240,200);Minimap.scripts.OnSizeChanged(Minimap);flush()
+ assert(select(4,edge:GetPoint())==-125 and edge.db.minimapPos==180)
+ combat=true;Minimap:SetSize(260,200);Minimap.scripts.OnSizeChanged(Minimap);flush()
+ assert(select(4,edge:GetPoint())==-125,'Resizing must defer in combat')
+ combat=false;ns:RefreshMinimapTools();assert(select(4,edge:GetPoint())==-135)
+ Minimap:SetSize(180,180);edge.db.minimapPos=45
  ns:SetSquareMinimapEnabled(false);flush()
+ assert(math.abs(select(4,edge:GetPoint())-math.sqrt(.5)*95)<.001,'Disabling square restores circular placement from the saved angle')
  assert(Minimap.mask=='original-mask' and GetMinimapShape==originalShape and MinimapBorder.shown)
  assert(select(2,MiniMapMailFrame:GetPoint())==MinimapCluster)
  ns:SetMinimapHeaderBarEnabled(true);flush()
@@ -113,6 +142,7 @@ function RunMinimapTests(ns)
  TimeManagerClockButton.scripts.OnClick(TimeManagerClockButton,'RightButton');assert(originalClicks==1)
  ns:SetAddonCompartmentHidden(true);assert(not AddonCompartmentFrame.shown)
  ns:SetAddonCompartmentHidden(false);assert(AddonCompartmentFrame.shown)
+ edge:Show()
  ns:SetMinimapButtonsMouseoverEnabled(true);flush();assert(not addon.shown)
  Minimap.mouse=true;Minimap.scripts.OnEnter(Minimap);assert(addon.shown and addon.alpha==.8)
  Minimap.mouse=false;Minimap.scripts.OnLeave(Minimap);flush();assert(not addon.shown)
@@ -120,6 +150,7 @@ function RunMinimapTests(ns)
  local collector=ZoidsTools_FMinimapButtonCollector
  assert(collector.shown and addon.parent~=Minimap and protected.parent==Minimap and pin.parent==Minimap)
  collector.scripts.OnClick();assert(addon.shown and ZoidsTools_FMinimapButtonCollectorPanel.shown)
+ assert(select(1,edge:GetPoint())=='TOPLEFT','Edge refresh must not pull buttons out of the collector')
  combat=true
  ns:SetSquareMinimapEnabled(true);assert(GetMinimapShape()=='ROUND','Shape changes must defer in combat')
  collector.scripts.OnClick();assert(ZoidsTools_FMinimapButtonCollectorPanel.shown)
@@ -129,6 +160,7 @@ function RunMinimapTests(ns)
  ns:SetMinimapButtonsMouseoverEnabled(false);ns:SetMinimapButtonCollectorEnabled(false);flush()
  assert(addon.parent==Minimap and addon.shown and addon.alpha==.8 and not collector.shown)
  assert(select(4,addon:GetPoint())==10)
+ assert(select(4,edge:GetPoint())>85,'Leaving the collector must use the current square geometry')
  -- Retail-only widgets can be absent on the Forever client.
  AddonCompartmentFrame=nil;TimeManagerClockButton=nil;GameTimeFrame=nil;MiniMapTracking=nil;MiniMapMailFrame=nil
  ns:SetMinimapHeaderBarEnabled(true);flush();ns:SetMinimapHeaderBarEnabled(false);flush()

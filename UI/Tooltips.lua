@@ -22,7 +22,20 @@ function UI.CreateTooltipsPage(parent)
     local inventoryHelp = UI.CreateBodyText(page,
         L["Log into each character to record their bags and equipment. Visit their bank to record its contents. Offline characters and closed banks show their last recorded counts. Shared bank counts appear when supported by the client."], 500)
     inventoryHelp:SetPoint("TOPLEFT", 0, -215)
-    function page:Refresh() toggle:Refresh(); items:Refresh() end
+    local levels = UI.CreateCheckbox(page, L["Item levels on gear"],
+        L["Show item levels on character, inspect, bag and bank equipment icons."],
+        function() return ns:GetItemLevelOverlaysEnabled() end,
+        function(value) ns:SetItemLevelOverlaysEnabled(value) end)
+    levels:SetPoint("TOPLEFT", 0, -300)
+    local players = UI.CreateCheckbox(page, L["Player item level"],
+        L["Show equipped item level in player mouseover tooltips when the game supplies it."],
+        function() return ns:IsTooltipItemLevelEnabled() end,
+        function(value) ns:SetTooltipItemLevelEnabled(value) end)
+    players:SetPoint("TOPLEFT", 0, -350)
+    local levelHelp = UI.CreateBodyText(page,
+        L["Enabled by default. Inspecting other players requires range and may take a moment. Results are cached briefly; missing or restricted values are not guessed. Changes to player tooltips apply on the next mouseover."], 500)
+    levelHelp:SetPoint("TOPLEFT", 0, -400)
+    function page:Refresh() toggle:Refresh(); items:Refresh(); levels:Refresh(); players:Refresh() end
     page:SetScript("OnShow", function(self) self:Refresh() end)
     page:Hide()
     return page

@@ -12,13 +12,15 @@ import upload_curseforge as cf
 
 toc = (root / 'ZoidsTools_F.toc').read_text(encoding='utf-8-sig')
 current_version = re.search(r'^## Version:\s*(\S+)', toc, re.M).group(1)
+assert re.search(r'^## Interface:\s*16001\s*$', toc, re.M), 'Forever 1.60.1 requires interface 16001'
 versions = [{'id': 123, 'name': '1.60.1'}, {'id': 456, 'name': '12.0.1'}]
 assert cf.metadata(toc, 'v0.2.0-beta', versions)['gameVersions'] == [123]
 for tag, expected in [('v0.2.0-beta', 'beta'), ('v0.2.0-alpha.1', 'alpha'), ('v0.2.0', 'release')]:
     assert cf.metadata(toc, tag, versions)['releaseType'] == expected
 for bad_toc, bad_versions in [
     (toc.replace('1700355', '999'), versions),
-    (toc.replace('160001', '120001'), versions),
+    (toc.replace('16001', '120001'), versions),
+    (toc.replace('16001', '160001'), versions),
     (toc, versions[1:]),
     (toc, versions + [versions[0]]),
 ]:
@@ -38,8 +40,12 @@ with patch.dict('os.environ', {}, clear=True), patch.object(cf, 'build_opener') 
     network.assert_not_called()
 opener = MagicMock()
 opener.open.side_effect = [io.BytesIO(json.dumps(versions).encode()), io.BytesIO(b'{"id": 987}')]
-with patch.dict('os.environ', {'CF_API_KEY': 'test-token'}), patch.object(cf, 'build_opener', return_value=opener):
+archive = MagicMock()
+archive.name = f'ZoidsTools_F-{current_version}.zip'
+archive.read_bytes.return_value = b'PK\x03\x04mock archive payload'
+with patch.dict('os.environ', {'CF_API_KEY': 'test-token'}), patch.object(cf, 'build_opener', return_value=opener), patch.object(cf, 'build', return_value=archive) as build:
     cf.upload('v' + current_version)
+    build.assert_called_once_with(tag='v' + current_version)
 request = opener.open.call_args_list[1].args[0]
 assert request.full_url == 'https://wow.curseforge.com/api/projects/1700355/upload-file'
 assert request.get_method() == 'POST'

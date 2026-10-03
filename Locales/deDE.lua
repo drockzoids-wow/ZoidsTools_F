@@ -2,6 +2,10 @@ local _, ns = ...
 if ns.locale ~= "deDE" then return end
 -- Initial machine-assisted translation; native-speaker review welcome.
 ns:RegisterLocale("deDE", {
+    ["Auto-open containers"] = "Behälter automatisch öffnen",
+    ["Open clams and unlocked containers in your bags."] = "Öffnet Muscheln und unverschlossene Behälter in euren Taschen.",
+    ["Off by default. Skips locked boxes; pauses in combat and at vendors, mail, banks and trades. Hold Shift to pause. Requires free bag space. Uses normal loot settings."] = "Standardmäßig aus. Überspringt verschlossene Kisten; pausiert im Kampf sowie bei Händlern, Post, Banken und beim Handel. Umschalt gedrückt halten zum Pausieren. Benötigt freien Taschenplatz. Verwendet die normalen Beuteeinstellungen.",
+
     ["  •  Preview"] = "  • Vorschau",
     [" • 0.15-second refresh limit."] = " • Aktualisierungslimit von 0,15 Sekunden.",
     ["%.3f s (%d ms)"] = "%.3f s (%d ms)",

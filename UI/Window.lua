@@ -68,8 +68,10 @@ local function BuildWindow()
     macrosButton:SetPoint("TOPLEFT", 8, -372)
     local completionistButton = UI.CreateButton(sidebar, "Completionist", 126, 28)
     completionistButton:SetPoint("TOPLEFT", 8, -408)
+    local professionsButton = UI.CreateButton(sidebar, L["Professions"], 126, 28)
+    professionsButton:SetPoint("TOPLEFT", 8, -444)
     local note = UI.CreateBodyText(sidebar, "v" .. ns.version, 116)
-    note:SetPoint("TOPLEFT", 12, -464)
+    note:SetPoint("TOPLEFT", 12, -478)
 
     local page = CreateFrame("Frame", nil, frame)
     page:SetPoint("TOPLEFT", 180, -90)
@@ -145,6 +147,7 @@ local function BuildWindow()
     local castbarsPage = UI.CreateCastbarsPage(frame)
     local vendorPage = UI.CreateVendorPage(frame)
     local tooltipsPage = UI.CreateTooltipsPage(frame)
+    local professionsPage = UI.CreateProfessionsPage(frame)
     local lootPage = UI.CreateLootPage(frame)
     local questsPage = UI.CreateQuestsPage(frame)
     local actionBarsPage = UI.CreateActionBarsPage(frame)
@@ -156,12 +159,12 @@ local function BuildWindow()
         frame:SetWidth(900)
         sidebar:SetWidth(180)
         for _, button in ipairs({ selected, windowsButton, unitFramesButton, castbarsButton,
-            vendorButton, tooltipsButton, lootButton, questsButton, actionBarsButton, statsButton, macrosButton, completionistButton }) do
+            vendorButton, tooltipsButton, lootButton, questsButton, actionBarsButton, statsButton, macrosButton, completionistButton, professionsButton }) do
             button:SetWidth(164)
             button.text:SetWidth(148)
         end
         for _, content in ipairs({ page, windowsPage, unitFramesPage, castbarsPage, vendorPage,
-            tooltipsPage, lootPage, questsPage, actionBarsPage, statsPage, macrosPage, completionistPage }) do
+            tooltipsPage, lootPage, questsPage, actionBarsPage, statsPage, macrosPage, completionistPage, professionsPage }) do
             content:ClearAllPoints()
             content:SetPoint("TOPLEFT", 218, -90)
             content:SetWidth(650)
@@ -179,6 +182,7 @@ local function BuildWindow()
         local isCastbars = key == "castbars"
         local isVendor = key == "vendor"
         local isTooltips = key == "tooltips"
+        local isProfessions = key == "professions"
         local isLoot = key == "loot"
         local isQuests = key == "quests"
         local isActionBars = key == "actionbars"
@@ -187,6 +191,7 @@ local function BuildWindow()
         local isCompletionist = key == "completionist"
         activePage = isVendor and vendorPage or (isCastbars and castbarsPage or (isUnitFrames and unitFramesPage or (isWindows and windowsPage or page)))
         if isTooltips then activePage = tooltipsPage end
+        if isProfessions then activePage = professionsPage end
         if isLoot then activePage = lootPage end
         if isQuests then activePage = questsPage end
         if isActionBars then activePage = actionBarsPage end
@@ -199,6 +204,7 @@ local function BuildWindow()
         castbarsPage:SetShown(isCastbars)
         vendorPage:SetShown(isVendor)
         tooltipsPage:SetShown(isTooltips)
+        professionsPage:SetShown(isProfessions)
         lootPage:SetShown(isLoot)
         questsPage:SetShown(isQuests)
         actionBarsPage:SetShown(isActionBars)
@@ -211,6 +217,7 @@ local function BuildWindow()
         castbarsButton:SetStyledSelected(isCastbars)
         vendorButton:SetStyledSelected(isVendor)
         tooltipsButton:SetStyledSelected(isTooltips)
+        professionsButton:SetStyledSelected(isProfessions)
         lootButton:SetStyledSelected(isLoot)
         questsButton:SetStyledSelected(isQuests)
         actionBarsButton:SetStyledSelected(isActionBars)
@@ -223,6 +230,7 @@ local function BuildWindow()
         if isStats then subtitle:SetText(L["FOREVER BETA  /  STATS"]) end
         if isMacros then subtitle:SetText(L["FOREVER BETA  /  "] .. L["Macros"]) end
         if isCompletionist then subtitle:SetText("FOREVER BETA  /  COMPLETIONIST") end
+        if isProfessions then subtitle:SetText(L["FOREVER BETA  /  "] .. L["Professions"]) end
         activePage:Refresh()
     end
     selected:SetScript("OnClick", function() frame:SelectPage("meters") end)
@@ -231,6 +239,7 @@ local function BuildWindow()
     castbarsButton:SetScript("OnClick", function() frame:SelectPage("castbars") end)
     vendorButton:SetScript("OnClick", function() frame:SelectPage("vendor") end)
     tooltipsButton:SetScript("OnClick", function() frame:SelectPage("tooltips") end)
+    professionsButton:SetScript("OnClick", function() frame:SelectPage("professions") end)
     lootButton:SetScript("OnClick", function() frame:SelectPage("loot") end)
     questsButton:SetScript("OnClick", function() frame:SelectPage("quests") end)
     actionBarsButton:SetScript("OnClick", function() frame:SelectPage("actionbars") end)

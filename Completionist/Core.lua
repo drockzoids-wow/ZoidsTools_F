@@ -182,6 +182,10 @@ events:SetScript("OnEvent",function(_,event,a)
         ns.PrepareCharacter()
         if ns.migrationPending then return end
         ns.char=ZoidsTools_FCompletionistDB
+        -- Retire the experimental navigation settings without touching quest records.
+        ns.char.navigationTarget=nil
+        ns.char.navigationPosition=nil
+        ns.char.navigationLocked=nil
         -- Preserve original settings, but never treat manual progress or pins as completion evidence.
         if not ({Mine=true,Alliance=true,Horde=true,All=true})[ns.char.factionFilter or ""] then ns.char.factionFilter="Mine" end
         if not ({All=true,Unfinished=true,Completed=true,["In log"]=true,Unknown=true})[ns.char.statusFilter or ""] then ns.char.statusFilter="All" end

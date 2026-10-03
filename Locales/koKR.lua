@@ -2,6 +2,10 @@ local _, ns = ...
 if ns.locale ~= "koKR" then return end
 -- Initial machine-assisted translation; native-speaker review welcome.
 ns:RegisterLocale("koKR", {
+    ["Auto-open containers"] = "용기 자동 열기",
+    ["Open clams and unlocked containers in your bags."] = "가방에 있는 조개와 잠기지 않은 용기를 엽니다.",
+    ["Off by default. Skips locked boxes; pauses in combat and at vendors, mail, banks and trades. Hold Shift to pause. Requires free bag space. Uses normal loot settings."] = "기본적으로 꺼져 있습니다. 잠긴 상자는 건너뛰며 전투 중이나 상점, 우편, 은행, 거래 이용 중에는 일시 중지합니다. Shift를 누르고 있으면 일시 중지합니다. 가방에 빈칸이 필요합니다. 일반 전리품 설정을 사용합니다.",
+
     ["  •  Preview"] = "  • 미리보기",
     [" • 0.15-second refresh limit."] = " • 새로고침 제한은 0.15초입니다.",
     ["%.3f s (%d ms)"] = "%.3f s (%d ms)",

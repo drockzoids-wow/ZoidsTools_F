@@ -2,6 +2,10 @@ local _, ns = ...
 if ns.locale ~= "frFR" then return end
 -- Initial machine-assisted translation; native-speaker review welcome.
 ns:RegisterLocale("frFR", {
+    ["Auto-open containers"] = "Ouvrir automatiquement les conteneurs",
+    ["Open clams and unlocked containers in your bags."] = "Ouvre les palourdes et les conteneurs non verrouillés dans vos sacs.",
+    ["Off by default. Skips locked boxes; pauses in combat and at vendors, mail, banks and trades. Hold Shift to pause. Requires free bag space. Uses normal loot settings."] = "Désactivé par défaut. Ignore les coffrets verrouillés ; se met en pause en combat et chez les marchands, à la poste, en banque et lors des échanges. Maintenez Maj pour suspendre. Nécessite de la place dans les sacs. Utilise les réglages de butin habituels.",
+
     ["  •  Preview"] = "  • Aperçu",
     [" • 0.15-second refresh limit."] = " • Limite de rafraîchissement de 0,15 seconde.",
     ["%.3f s (%d ms)"] = "%.3f s (%d ms)",

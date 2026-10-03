@@ -43,6 +43,23 @@ local function Cycle(value,options)
     for i,v in ipairs(options)do if v==value then return options[i%#options+1] end end
     return options[1]
 end
+local function PickupGroups(locations)
+    local groups,byGiver={},{}
+    for _,p in ipairs(locations) do
+        -- Different source sightings of one giver are alternatives, not new
+        -- quest givers. Preserve source order and its representative coordinate.
+        local key=table.concat({p.entityType or "",p.entityID or p.name,p.mapID or p.areaID or "",p.zone},"\031")
+        local group=byGiver[key]
+        if not group then
+            group={point=p,positions={},count=0};byGiver[key]=group;groups[#groups+1]=group
+        end
+        local position=string.format("%.1f, %.1f",p.x*100,p.y*100)
+        if not group.positions[position] then
+            group.positions[position]=true;group.count=group.count+1
+        end
+    end
+    return groups
+end
 function ns.QuestTooltip(row)
     local q=row.quest;if not q or not GameTooltip then return end
     local state=ns.statusInfo[ns.Status(q.id)]
@@ -76,15 +93,31 @@ function ns.QuestTooltip(row)
     end
     local locations=ns.pickups and ns.pickups[q.id]
     if locations and #locations>0 then
-        for i=1,math.min(4,#locations) do
-            local p=locations[i]
+        local groups=PickupGroups(locations)
+        local alternatives=0
+        for i=1,math.min(4,#groups) do
+            local p=groups[i].point
             GameTooltip:AddLine(string.format("Pickup: %s - %s (%.1f, %.1f)",p.name,p.zone,p.x*100,p.y*100),1,.85,.4,true)
+            alternatives=alternatives+groups[i].count-1
         end
-        if #locations>4 then GameTooltip:AddLine("Additional pickup locations are recorded in the source data.") end
+        if alternatives>0 then
+            GameTooltip:AddLine(string.format("%d alternate recorded position%s in the source data.",alternatives,alternatives==1 and "" or "s"),.7,.7,.7,true)
+        end
+        if #groups>4 then GameTooltip:AddLine("Additional quest givers are recorded in the source data.") end
         GameTooltip:AddLine("Source: Wowhead Forever; coordinates not verified in game.",.7,.7,.7,true)
     elseif not q.discovered and not q.observed then
         local starter=ns.starters and ns.starters[q.id]
         GameTooltip:AddLine(starter and ("Starts with: "..starter.." (coordinates unavailable)") or "Pickup location not yet documented.",.7,.7,.7,true)
+    end
+    local client=ns.clientQuestEvidence and ns.clientQuestEvidence[q.id]
+    if client then
+        for _,story in ipairs(client.storylines) do
+            GameTooltip:AddLine(string.format("Client storyline: %s (position %d)",story.name,story.order+1),.65,.85,1,true)
+        end
+        for _,marker in ipairs(client.completionMarkers) do
+            GameTooltip:AddLine(string.format("Client completion marker: %s (%.1f, %.1f)",marker.zone,marker.x*100,marker.y*100),.65,.85,1,true)
+        end
+        GameTooltip:AddLine("Source: installed Forever client 1.60.1.70009. Map markers are not verified NPC spawn locations or proof of quest availability.",.7,.7,.7,true)
     end
     GameTooltip:AddLine("Not completed does not confirm that you can accept this quest.",.85,.85,.85,true)
     if ns.Status(q.id)=="unknown" then GameTooltip:AddLine("The game has not supplied a usable completion result.",.85,.85,.85,true) end

@@ -11,8 +11,8 @@ from package import ROOT, build
 
 PROJECT_ID = '1700355'
 API = 'https://wow.curseforge.com/api'
-# Forever beta uses interface 160001 for client 1.60.1; do not infer retail numbering.
-GAME_VERSIONS = {160001: '1.60.1'}
+# Forever beta uses interface 16001 for client 1.60.1; do not infer retail numbering.
+GAME_VERSIONS = {16001: '1.60.1'}
 
 
 class NoRedirects(HTTPRedirectHandler):

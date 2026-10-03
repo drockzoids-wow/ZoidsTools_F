@@ -2,6 +2,10 @@ local _, ns = ...
 if ns.locale ~= "itIT" then return end
 -- Initial machine-assisted translation; native-speaker review welcome.
 ns:RegisterLocale("itIT", {
+    ["Auto-open containers"] = "Apri automaticamente i contenitori",
+    ["Open clams and unlocked containers in your bags."] = "Apre le vongole e i contenitori non chiusi a chiave nelle borse.",
+    ["Off by default. Skips locked boxes; pauses in combat and at vendors, mail, banks and trades. Hold Shift to pause. Requires free bag space. Uses normal loot settings."] = "Disattivato per impostazione predefinita. Salta i forzieri chiusi a chiave; si sospende in combattimento, dai mercanti, alla posta, in banca e durante gli scambi. Tieni premuto Maiusc per sospendere. Richiede spazio nelle borse. Usa le normali impostazioni del bottino.",
+
     ["  •  Preview"] = "  • Anteprima",
     [" • 0.15-second refresh limit."] = " • Limite di aggiornamento di 0,15 secondi.",
     ["%.3f s (%d ms)"] = "%.3f s (%d ms)",

@@ -14,6 +14,50 @@ local function True(v) return not Secret(v) and (v==true or v==1) end
 local function Combat() return True(Call(InCombatLockdown)) end
 local function Settings() return ns.db and ns.db.quests end
 
+-- Classic supplied items are not always exposed as quest-log special items.
+-- Item/quest pairs: wowhead.com/classic/quest=6122 and /quest=6127.
+-- Zone fallback deliberately avoids treating a turn-in marker as the use site.
+local suppliedItems={
+    [6122]={itemID=15844,mapID=1439}, -- Empty Cliffspring Falls Sampler, Darkshore
+    [6127]={itemID=15842,mapID=1413}, -- Empty Dreadmist Peak Sampler, The Barrens
+}
+local function BagItem(bag,slot)
+    if C_Container and C_Container.GetContainerItemInfo then
+        local v=Call(C_Container.GetContainerItemInfo,bag,slot)
+        if type(v)=="table" and Number(v.itemID) then
+            return v.itemID,not Secret(v.hyperlink) and v.hyperlink,not Secret(v.iconFileID) and v.iconFileID
+        end
+    elseif type(GetContainerItemInfo)=="function" then
+        local ok,icon,_,_,_,_,_,link=pcall(GetContainerItemInfo,bag,slot)
+        if ok and not Secret(link) and type(link)=="string" then
+            return tonumber(link:match("item:(%d+)")),link,not Secret(icon) and icon
+        end
+    end
+end
+local function FindSuppliedItem(id)
+    local known=suppliedItems[id];if not known then return end
+    for bag=0,math.min(NUM_BAG_SLOTS or 4,5) do
+        local count=Call(C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots,bag)
+        if Number(count) then
+            for slot=1,count do
+                local itemID,link,icon=BagItem(bag,slot)
+                if itemID==known.itemID then return link or ("item:"..itemID),icon,bag,slot end
+            end
+        end
+    end
+end
+local function InSuppliedItemZone(id)
+    local known=suppliedItems[id];if not known then return false end
+    local map=Call(C_Map and C_Map.GetBestMapForUnit,"player")
+    for _=1,6 do
+        if not Number(map) or map<=0 then break end
+        if map==known.mapID then return true end
+        local info=Call(C_Map and C_Map.GetMapInfo,map)
+        map=type(info)=="table" and info.parentMapID or nil
+    end
+    return false
+end
+
 function ns:GetQuestItemButtonEnabled()
     local db=Settings();return db and db.questItemButtonEnabled==true
 end
@@ -45,13 +89,23 @@ function ns:FindNearbyQuestItem()
             local link,icon,charges,showComplete=Call(GetQuestLogSpecialItemInfo,index)
             local itemID=type(link)=="string" and tonumber(link:match("item:(%d+)"))
             local complete=Call(api.IsComplete or IsQuestComplete,id)
+            local bag,slot,suppliedCarried
+            if not True(complete) and suppliedItems[id] and (not itemID or itemID==suppliedItems[id].itemID) then
+                local suppliedLink,suppliedIcon,suppliedBag,suppliedSlot=FindSuppliedItem(id)
+                suppliedCarried=suppliedBag~=nil
+                if not itemID then
+                    link,icon,bag,slot=suppliedLink,suppliedIcon,suppliedBag,suppliedSlot
+                    itemID=type(link)=="string" and tonumber(link:match("item:(%d+)"))
+                end
+            end
             if itemID and itemID>0 and (not True(complete) or True(showComplete)) then
                 local inside=True(Call(C_Minimap and C_Minimap.IsInsideQuestBlob,id))
                 local distance,onContinent=Call(api.GetDistanceSqToQuest,id)
                 if not api.GetDistanceSqToQuest then distance,onContinent=Call(GetDistanceSqToQuest,index) end
                 local validDistance=Number(distance) and distance>=0 and True(onContinent)
                 local inRange=True(Call(IsQuestLogSpecialItemInRange,index))
-                if inside or (validDistance and distance<=250*250) or (inRange and onContinent~=false) then
+                local suppliedZone=suppliedCarried and InSuppliedItemZone(id)
+                if inside or (validDistance and distance<=250*250) or (inRange and onContinent~=false) or suppliedZone then
                     local rank=inside and 2 or (inRange and 1 or 0)
                     local isTracked=id==tracked
                     local d=validDistance and distance or math.huge
@@ -59,6 +113,7 @@ function ns:FindNearbyQuestItem()
                         ((isTracked and not best.tracked) or (isTracked==best.tracked and d<best.distance))) then
                         best={id=id,index=index,title=type(title)=="string" and title or "",itemID=itemID,
                             link=link,icon=icon,charges=Number(charges) and charges or 0,
+                            bag=bag,slot=slot,
                             rank=rank,tracked=isTracked,distance=d}
                     end
                 end
@@ -83,13 +138,18 @@ local function Cooldown()
     local id=Info(c.index)
     local link=Call(GetQuestLogSpecialItemInfo,c.index)
     local start,duration,enabled
-    if id==c.id and link==c.link then
+    if c.bag~=nil then
+        if id==c.id and BagItem(c.bag,c.slot)==c.itemID then
+            start,duration,enabled=Call(C_Container and C_Container.GetContainerItemCooldown or GetContainerItemCooldown,c.bag,c.slot)
+        end
+    elseif id==c.id and link==c.link then
         start,duration,enabled=Call(GetQuestLogSpecialItemCooldown,c.index)
     end
     if Number(start) and Number(duration) and True(enabled) then
         button.cooldown:SetCooldown(start,duration)
     else button.cooldown:Clear() end
-    local range=id==c.id and Call(IsQuestLogSpecialItemInRange,c.index)
+    local range
+    if c.bag==nil and id==c.id then range=Call(IsQuestLogSpecialItemInRange,c.index) end
     if range==false or range==0 then button.icon:SetVertexColor(1,.25,.25)
     else button.icon:SetVertexColor(1,1,1) end
 end

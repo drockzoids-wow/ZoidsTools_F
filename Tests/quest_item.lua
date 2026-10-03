@@ -109,6 +109,24 @@ function RunQuestItemTests(ns)
     ns:RefreshQuestItemButton();assert(not b.shown)
     C_QuestLog.GetDistanceSqToQuest=function()error("unavailable")end
     ns:RefreshQuestItemButton();assert(not b.shown)
+    -- Supplied Classic items may have neither a special-item entry nor usable
+    -- objective proximity. Only documented quest/item pairs get a zone fallback.
+    local bagID,zone=15844,1439
+    C_Container={GetContainerNumSlots=function(bag)return bag==0 and 1 or 0 end,
+        GetContainerItemInfo=function()if bagID then return {itemID=bagID,hyperlink="item:"..bagID,iconFileID=777} end end,
+        GetContainerItemCooldown=function()return 20,8,1 end}
+    C_Map={GetBestMapForUnit=function()return zone end,GetMapInfo=function()return {parentMapID=0}end}
+    log={{id=6122}};ns:RefreshQuestItemButton()
+    assert(b.shown and b.attributes.item1=="item:15844" and b.icon.texture==777 and b.cooldown.duration==8)
+    zone=1453;ns:RefreshQuestItemButton();assert(not b.shown)
+    zone=1439;bagID=15845;ns:RefreshQuestItemButton();assert(not b.shown,'Filled sampler is not a usable quest item')
+    bagID=15844;log[1].complete=true;ns:RefreshQuestItemButton();assert(not b.shown)
+    log={{id=6127}};bagID=15842;zone=1413;ns:RefreshQuestItemButton();assert(b.attributes.item1=="item:15842")
+    log={};ns:RefreshQuestItemButton();assert(not b.shown,'A bag item without its active quest is excluded')
+    log={{id=6122,link="item:15844"}};bagID=15844;zone=1439;ns:RefreshQuestItemButton()
+    assert(b.shown,'Zone fallback also covers native special items with missing proximity')
+    log={{id=6122}};zone=nil;ns:RefreshQuestItemButton();assert(not b.shown)
+    C_Container=nil;C_Map=nil
     -- Legacy client path uses log indexes for distance, IDs for completion.
     C_QuestLog=nil;C_Minimap=nil
     function GetNumQuestLogEntries()return 1 end

@@ -45,7 +45,7 @@ function CreateFrame()
 end
 SlashCmdList = {}
 DEFAULT_CHAT_FRAME = { AddMessage = function() end }
-function GetBuildInfo() return '1.60.1', '69893', '', 160001 end
+function GetBuildInfo() return '1.60.1', '70170', '', 16001 end
 ZoidsToolsDB = { retailSentinel = true }
 ZoidsTools_FDB = { customDamageMeter = { textScale = 1.35 }, ui = { minimap = { show = false } } }
 ''')
@@ -63,7 +63,7 @@ assert(not ns:HasDamageMeterAPI())
 assert(not ns:IsMeterDataAvailable())
 assert(ns:SetCustomDamageMeterEnabled(true) == false)
 assert(ns.db.customDamageMeter.enabled == false)
-assert(ns:GetCompatibilityStatus():find('160001'))
+assert(ns:GetCompatibilityStatus():find('16001'))
 C_DamageMeter = { GetCombatSessionFromType = function() end }
 assert(not ns:HasDamageMeterAPI())
 Enum = { DamageMeterSessionType = { Current = 0, Overall = 1 }, DamageMeterType = { DamageDone = 0 } }
@@ -144,6 +144,29 @@ for file in ['Compatibility.lua', 'Modules/FastLoot.lua']:
     loot_lua.execute((root / file).read_text(encoding='utf-8'), 'ZoidsTools_F', loot_ns)
 loot_lua.globals().RunFastLootTests(loot_ns)
 print('PASS: single-pass loot, pacing, duplicate events, cancellation, modifiers, locked slots, and restricted data')
+container_lua = LuaRuntime(unpack_returned_tuples=True)
+container_lua.execute((root / 'Tests/containers.lua').read_text(encoding='utf-8'))
+container_ns = container_lua.eval('{ db = { loot = { autoOpenContainers = false } } }')
+for file in ['Compatibility.lua', 'Modules/ContainerOpener.lua']:
+    container_lua.execute((root / file).read_text(encoding='utf-8'), 'ZoidsTools_F', container_ns)
+container_lua.globals().RunContainerTests(container_ns)
+print('PASS: opt-in container opening, locked/busy exclusions, loot pacing, unchanged-item suppression, interaction/combat guards and missing APIs')
+profession_lua = LuaRuntime(unpack_returned_tuples=True)
+for file in ['Tests/ui_localization.lua', 'Tests/professions.lua']:
+    profession_lua.execute((root / file).read_text(encoding='utf-8'))
+profession_ns = profession_lua.eval('{ db = { professions = { enabled = false, modifier = "alt" } } }')
+for file in ['Compatibility.lua', 'Modules/ProfessionHelper.lua']:
+    profession_lua.execute((root / file).read_text(encoding='utf-8'), 'ZoidsTools_F', profession_ns)
+profession_lua.globals().RunProfessionTests(profession_ns)
+print('PASS: disenchant modifier selection, secure target attributes, stale-slot rejection, bag/quality/spell exclusions and combat deferral')
+levels_lua = LuaRuntime(unpack_returned_tuples=True)
+for file in ['Tests/ui_localization.lua', 'Tests/itemlevels.lua']:
+    levels_lua.execute((root / file).read_text(encoding='utf-8'))
+levels_ns = levels_lua.eval('{ db = { tooltips = { itemLevelOverlays = true, showItemLevel = true } } }')
+for file in ['Compatibility.lua', 'Modules/ItemLevels.lua', 'Modules/PlayerItemLevel.lua']:
+    levels_lua.execute((root / file).read_text(encoding='utf-8'), 'ZoidsTools_F', levels_ns)
+levels_lua.globals().RunItemLevelTests(levels_ns)
+print('PASS: equipment/bag/bank ilvl overlays, missing data, player equipped average, matching inspect responses, cache, combat/range guards and inspection ownership')
 quest_lua = LuaRuntime(unpack_returned_tuples=True)
 quest_lua.execute((root / 'Tests/quests.lua').read_text(encoding='utf-8'))
 quest_ns = quest_lua.eval('{ db = { quests = { autoAccept = false, autoTurnIn = false, pauseModifier = "shift" } } }')

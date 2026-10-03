@@ -1,6 +1,8 @@
 # Generated packages and local test environments
 dist/
 build/
+# Archive reader working cache (never addon source)
+/cache/
 .git-restored/
 .venv/
 venv/

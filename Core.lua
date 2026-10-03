@@ -2,7 +2,7 @@ local addonName, ns = ...
 local L = ns.L or setmetatable({}, { __index = function(_, key) return key end })
 ns.addonName = addonName
 ns.title = "ZoidsTools Forever"
-ns.version = "0.2.9-beta"
+ns.version = "0.2.10-beta"
 
 local defaults = {
     buffs = { characters = {} },
@@ -13,8 +13,9 @@ local defaults = {
     macros = { healthEnabled = false, healthCombatItems = true, manaEnabled = false, manaCombatPotion = true },
     quests = { autoAccept = false, autoTurnIn = false, pauseModifier = "shift", minimizeTracker = true,
         questItemButtonEnabled = true, questItemButton = { point = "CENTER", relativePoint = "CENTER", x = 280, y = -80 } },
-    loot = { fastLoot = true, slotDelay = 0 },
-    tooltips = { classColoredNames = true, itemCounts = true },
+    professions = { enabled = false, modifier = "alt" },
+    loot = { fastLoot = true, slotDelay = 0, autoOpenContainers = false },
+    tooltips = { classColoredNames = true, itemCounts = true, itemLevelOverlays = true, showItemLevel = true },
     vendor = { autoSellJunk = false, autoRepairMode = "disabled" },
     unitFrames = { classColorHealth = false },
     castbars = {
@@ -127,6 +128,8 @@ events:SetScript("OnEvent", function(_, event, name)
         ns:InitializeUnitFrames()
         ns:InitializeMissingBuffs()
         ns:InitializePlayerTooltip()
+        ns:InitializeItemLevels()
+        ns:InitializePlayerItemLevel()
         ns:InitializeWarbandItems()
         ns:InitializeActionButtonRange()
         ns:InitializeCampfireBar()
@@ -135,7 +138,9 @@ events:SetScript("OnEvent", function(_, event, name)
         ns:InitializeStatsWindow()
         ns:InitializeCastbars()
         ns:InitializeVendorAutomation()
+        ns:InitializeProfessionHelper()
         ns:InitializeFastLoot()
+        ns:InitializeContainerOpener()
         ns:InitializeQuestAutomation()
         ns:InitializeQuestItemButton()
         ns:InitializeTrackerMinimize()
@@ -178,6 +183,8 @@ SlashCmdList.ZOIDSTOOLS_FOREVER = function(message)
         ns:OpenConfig("completionist")
     elseif command == "quests" or command == "quest" then
         ns:OpenConfig("quests")
+    elseif command == "professions" or command == "profession" then
+        ns:OpenConfig("professions")
     elseif command == "loot" or command == "fastloot" then
         ns:OpenConfig("loot")
     elseif command == "tooltips" or command == "tooltip" then

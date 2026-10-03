@@ -1,8 +1,8 @@
-## Interface: 160001
+## Interface: 16001
 ## Title: ZoidsTools Forever
 ## Notes: Forever beta tools with damage meters, movable windows and a Completionist quest tracker.
 ## Author: Drockzoids
-## Version: 0.2.9-beta
+## Version: 0.2.10-beta
 ## X-Curse-Project-ID: 1700355
 ## SavedVariables: ZoidsTools_FDB, ZoidsTools_FInventoryDB
 ## SavedVariablesPerCharacter: ZoidsTools_FCompletionistDB
@@ -30,6 +30,7 @@ Compatibility.lua
 Completionist\Bootstrap.lua
 Completionist\Data.lua
 Completionist\PickupData.lua
+Completionist\ClientData.lua
 Completionist\Core.lua
 Completionist\Discovery.lua
 Completionist\UI.lua
@@ -38,6 +39,8 @@ Modules\UnitFrames.lua
 Modules\MissingBuffs.lua
 Modules\MinimapTools.lua
 Modules\PlayerTooltip.lua
+Modules\ItemLevels.lua
+Modules\PlayerItemLevel.lua
 Modules\ItemInventory.lua
 Modules\ActionButtonRange.lua
 Modules\CampfireBar.lua
@@ -46,7 +49,9 @@ Modules\ZoneReputation.lua
 Modules\StatsWindow.lua
 Modules\Castbars.lua
 Modules\VendorAutomation.lua
+Modules\ProfessionHelper.lua
 Modules\FastLoot.lua
+Modules\ContainerOpener.lua
 Modules\QuestAutomation.lua
 Modules\QuestItemButton.lua
 Modules\TrackerMinimize.lua
@@ -63,6 +68,7 @@ UI\Macros.lua
 UI\Stats.lua
 UI\Castbars.lua
 UI\Vendor.lua
+UI\Professions.lua
 UI\Loot.lua
 UI\Quests.lua
 UI\Completionist.lua

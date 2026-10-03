@@ -5,7 +5,7 @@
 For the first GitHub upload, follow [GITHUB_SETUP.md](GITHUB_SETUP.md). For development and releases, see [CONTRIBUTING.md](CONTRIBUTING.md) and [CHANGELOG.md](CHANGELOG.md).
 
 Forever beta port of ZoidsTools, focused on damage meters, movable windows and bags, and the basic settings UI.
-Targets the installed **1.60.1.69893** client with interface **160001** (derived from the client version; confirm with `/ztf status` in game).
+Targets Forever **1.60.1**, interface **16001** (installed build **70170**). Use `/ztf status` to see the running client's version and interface.
 
 ## Languages
 
@@ -62,9 +62,11 @@ The retail ZoidsTools addon is not required; its files and saved settings are no
 
 Quest automation is opt-in under `/ztf quests`, with independent Auto Accept and Auto Turn-in toggles. Hold Shift (or select Ctrl, Alt, or None) to pause at each quest stage. Turn-in claims zero/one-choice rewards and leaves multiple choices for manual handling. Supports the modern gossip quest list and classic quest greetings. Test acceptance, a completed quest, a reward-choice quest, and your pause key in game.
 
-The nearby quest-item button is enabled by default under `/ztf quests`. It appears to the right of center for an active quest-log item when the game reports you inside its quest area, within 250 yards on the same continent, or in item-use range. Click to use; right-drag to move. **Move quest item** shows a preview marked **MOVE**, with item use disabled and either mouse button available for dragging; **Lock quest item** ends the preview and restores left-click item use. Position is saved across characters. The button shows charges, cooldowns and red range feedback. During combat, the already-selected item remains usable; selecting another item, appearing/hiding, and option changes wait until combat ends. Unknown proximity does not display an item. Bag-only items without a quest-log association are not guessed. Verify the quest-area/item APIs with a usable quest item in Forever beta.
+The nearby quest-item button is enabled by default under `/ztf quests`. It appears to the right of center for an active quest-log item when the game reports you inside its quest area, within 250 yards on the same continent, or in item-use range. Click to use; right-drag to move. **Move quest item** shows a preview marked **MOVE**, with item use disabled and either mouse button available for dragging; **Lock quest item** ends the preview and restores left-click item use. Position is saved across characters. The button shows charges, cooldowns and red range feedback. During combat, the already-selected item remains usable; selecting another item, appearing/hiding, and option changes wait until combat ends. Unknown proximity normally does not display an item. The Principal Source has documented exceptions for its empty samplers: [Alliance quest 6122 / item 15844](https://www.wowhead.com/classic/quest=6122/the-principal-source) and [Horde quest 6127 / item 15842](https://www.wowhead.com/classic/quest=6127/the-principal-source). While the quest is active and the empty sampler is carried, the button can appear throughout Darkshore or the Barrens respectively, even when native item/proximity data is missing. Filling the sampler or completing the quest removes the fallback. Other bag-only items without a known quest association are not guessed. Verify the quest-area/item APIs with a usable quest item in Forever beta.
 
-Fast Loot is enabled by default and follows Blizzard's Auto Loot setting and modifier. Open `/ztf loot` to disable it or choose 0Ã¢â‚¬â€œ200 ms between item requests in 1 ms steps. Drag the slider or use the mouse wheel over it for precise adjustment; the label shows seconds and milliseconds. It attempts each slot once per opening, with no second pass. Actual pickup timing depends on the server and Blizzard's own looting behavior. Test with several items, the Auto Loot modifier, and closing loot mid-pickup.
+Fast Loot is enabled by default and follows Blizzard's Auto Loot setting and modifier. Open `/ztf loot` to disable it or choose 0ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“200 ms between item requests in 1 ms steps. Drag the slider or use the mouse wheel over it for precise adjustment; the label shows seconds and milliseconds. It attempts each slot once per opening, with no second pass. Actual pickup timing depends on the server and Blizzard's own looting behavior. Test with several items, the Auto Loot modifier, and closing loot mid-pickup.
+
+**Auto-open containers** is optional under `/ztf loot` and starts disabled. It opens bag items that the game marks as lootable with a localized Right Click to Open tooltip, including clams and unlocked boxes. Locked or busy items are skipped. Opening pauses during combat, casting, looting, vendor/mail/bank/trade interactions, while holding Shift, and when no general bag space is free. Normal loot settings still apply. An unchanged failed container is not repeatedly retried; toggle the option off/on to retry. The Forever client must allow automated item use; confirm with a clam after enabling.
 
 Player tooltip names use class colors by default, matching retail ZoidsTools. Open `/ztf tooltips` to toggle this. The module supports the retail line-data callback and an older-client tooltip fallback. Verify player and NPC hovers plus item tooltips in game after `/reload`; the automated tests cover color selection and fallback cleanup, but cannot verify the beta's rendering.
 
@@ -87,7 +89,7 @@ Movement tests also cover window/bag dragging, saved-position restoration, scale
 These do not validate Blizzard's actual beta API signatures, secret-value behavior, or visual layout.
 In-game compatibility is pending. If the beta does not expose `C_DamageMeter`, live meters remain unavailable; preview and settings still work.
 
-In game, verify `/ztf status` reports interface 160001, open settings, preview and resize both windows, lock them, enable meters, and fight a target. Check damage/healing, current/overall/recent segments, details, a party fight, reset, and persistence after `/reload`. Test with script errors enabled. Report any Lua error and the `/ztf status` output.
+In game, verify `/ztf status` reports interface 16001, open settings, preview and resize both windows, lock them, enable meters, and fight a target. Check damage/healing, current/overall/recent segments, details, a party fight, reset, and persistence after `/reload`. Test with script errors enabled. Report any Lua error and the `/ztf status` output.
 
 For movement, open Character, spellbook, merchant, bank, individual bags and combined bags. Drag and scale them, close/reopen, and `/reload` to check persistence. Toggle movement and bag handles, test individual/global resets, then check the world map title bar. In combat, verify unprotected bags retain their positions and can be dragged, while protected bags, other windows, scaling, and resets remain blocked. Open a late-loaded panel such as the auction house after login.
 
@@ -119,7 +121,19 @@ Open `/ztf buffs`, or **Missing-buff reminders** under Unit Frames. Quiet visual
 
 Reminders hide during combat, while mounted, and while dead, then recheck on resurrection or other relevant events. Any recognized rank or group equivalent satisfies a reminder. Unknown/restricted aura data suppresses reminders. Add up to eight custom spell IDs for learned buffs; if a buff uses a separate aura ID/name, it needs a future family entry. Icons are reminders only: hover for names and use your normal action bars to cast. Drag the reminder to move it, or toggle the preview in settings. New labels use English fallback; Forever-specific spell changes need in-game verification.
 
+### Item levels
+
+`/ztf tooltips` includes **Item levels on gear** and **Player item level**, both enabled by default. Gear labels cover Blizzard character/inspect slots (including Classic ranged slots), combined/separate bags, and supported bank item buttons. Item levels use detailed item-link data with the base item level as a fallback; empty, uncached, non-equipment, shirt and tabard slots do not receive labels. Other bag addons may need dedicated integration.
+
+Player tooltips use the game's equipped average for yourself and request inspection for other players in range, outside combat. `...` means an inspection is pending; a request that times out shows Unavailable. Results are cached for two minutes and matched to the player's GUID. Manual Inspect windows take priority, and the helper never clears another addon's inspection. Native average/inspect APIs must supply a readable positive result; no guessed average or gear score is substituted if Forever doesn't expose one. Live client inspection still needs verification after reloading.
+
+### Professions
+
+Enable **Modifier-click disenchant** under `/ztf professions`. Choose Alt (default), Ctrl, or Shift, then hold only that modifier and left-click highlighted bag equipment. The character must know Disenchant. The helper targets uncommon, rare, or epic weapons and armor in carried bags; the game makes the final eligibility and skill check. Disenchanting destroys the selected item. Equipped gear, bank slots, locked items, and combat are excluded. Starts disabled. Uses a secure click overlay like the retail helper; no automatic disenchanting. Bag addons exposing standard bag/slot methods are supported, along with Blizzard bag buttons. Live casting still needs verification in Forever.
+
 ### Completionist
+
+Local Forever build **1.60.1.70009** now supplies storyline and completion-marker details in tooltips for the Toxic Soil chain. These are client map markers, not verified NPC spawn locations. The full local audit and extra quest-ID inventory are in `Tools/reports/client-quests-70009.md`; the 1,423 extra IDs remain candidates because the client ID table does not contain their quest titles or prove availability.
 
 The tracker position, lock, and minimized state are shared across characters and saved with the main addon settings. Quest discoveries remain per-character.
 

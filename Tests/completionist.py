@@ -417,7 +417,7 @@ def migration_runtime(saved="", legacy="", loaded=False):
     if saved: runtime.execute(saved)
     if legacy: runtime.execute(legacy)
     host=runtime.globals().root
-    for name in ['Bootstrap.lua','Data.lua','PickupData.lua','Core.lua','Discovery.lua','UI.lua']:
+    for name in ['Bootstrap.lua','Data.lua','PickupData.lua','ClientData.lua','Core.lua','Discovery.lua','UI.lua']:
         runtime.execute((addon/name).read_text(encoding='utf-8'),'ZoidsTools_F',host)
     runtime.execute("""
         ns=root.Completionist
@@ -594,3 +594,58 @@ promoted.execute('''
     assert(tooltip:find("Wowhead Forever",1,true))
 ''')
 print('PASS: newly bundled discovery preserves saved NPC evidence, appears once, and shows both source and observation in its tooltip.')
+
+promoted.execute('''
+    assert(#ns.quests==6090 and ns.index[91564]==nil and ns.index[96912]==nil)
+    local count=0;for _ in pairs(ns.clientQuestEvidence)do count=count+1 end
+    assert(count==22)
+    local before=ns.Status(92742)
+    local lines={}
+    GameTooltip={SetOwner=function()end,SetText=function()end,Show=function()end,
+        AddLine=function(_,s)lines[#lines+1]=s end}
+    ns.QuestTooltip({quest=ns.index[92742]})
+    local tooltip=table.concat(lines,"\\n")
+    assert(tooltip:find("Client storyline: Toxic Soil (position 1)",1,true))
+    assert(tooltip:find("Client completion marker: Westfall (52.5, 53.0)",1,true))
+    assert(tooltip:find("not verified NPC spawn locations",1,true))
+    assert(ns.Status(92742)==before)
+''')
+print('PASS: client evidence enriches tooltips without creating candidate quests or changing completion status.')
+
+promoted.execute('''
+    local saved=ns.pickups[167]
+    local original={}
+    for i=1,4 do original[i]={name="Test giver",entityID=123,entityType=1,areaID=1519,zone="Stormwind City",x=.652,y=.212+i*.001} end
+    original[1].y=.212
+    ns.pickups[167]=original
+    local function tooltip()
+        local lines={}
+        GameTooltip={SetOwner=function()end,SetText=function()end,Show=function()end,
+            AddLine=function(_,s)lines[#lines+1]=s end}
+        ns.QuestTooltip({quest=ns.index[167]})
+        return table.concat(lines," | ")
+    end
+    local text=tooltip()
+    local _,rows=text:gsub("Pickup:","")
+    assert(rows==1 and text:find("65.2, 21.2",1,true))
+    assert(text:find("3 alternate recorded positions",1,true))
+    assert(#original==4) -- Display grouping must not discard source alternatives.
+    ns.pickups[167]={original[1],original[1],original[2],original[3],original[4],
+        {name="Other giver",entityID=999,entityType=1,areaID=1519,zone="Stormwind City",x=.2,y=.3}}
+    text=tooltip();_,rows=text:gsub("Pickup:","")
+    assert(rows==2 and text:find("Other giver",1,true))
+    assert(text:find("3 alternate recorded positions",1,true)) -- Exact duplicates add no count.
+    ns.pickups[167]=saved
+''')
+print('PASS: one tooltip row per giver/zone, duplicate-free alternate counts, distinct givers retained, and source coordinates preserved.')
+
+retired=migration_runtime(saved="""ZoidsTools_FCompletionistDB={
+ navigationTarget={id=353,mode="quest"},navigationPosition={x=20,y=40},navigationLocked=false,
+ discovered={[990050]={name="Keep discovery",level=5}},factionFilter="All"}""")
+retired.execute("""
+assert(ns.char.navigationTarget==nil and ns.char.navigationPosition==nil and ns.char.navigationLocked==nil)
+assert(ns.char.discovered[990050].name=="Keep discovery" and ns.char.factionFilter=="All")
+assert(ns.CreateUI and not ns.navigation and not ns.SelectQuestDestination)
+assert(not ZoidsTools_FQuestNavigation and not ns.navigationMapProvider)
+""")
+print('PASS: retired navigation settings are cleared while character discoveries and core tracker remain intact.')
